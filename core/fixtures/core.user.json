@@ -1,0 +1,47 @@
+[
+  {
+    "model": "core.user",
+    "pk": 1,
+    "fields": {
+      "username": "admin_user",
+      "email": "admin@atg.ru",
+      "password": "pbkdf2_sha256$260000$J6p4FzUJxQ5c1Y8sPjX1a7$0x8VnT6W9vKZuGkYH5qLmW6wT8uVvZ7T6hRn0Z6Z3s="
+    }
+  },
+  {
+    "model": "core.user",
+    "pk": 2,
+    "fields": {
+      "username": "logist1",
+      "email": "logist@atg.ru",
+      "password": "pbkdf2_sha256$260000$J6p4FzUJxQ5c1Y8sPjX1a7$0x8VnT6W9vKZuGkYH5qLmW6wT8uVvZ7T6hRn0Z6Z3s="
+    }
+  },
+  {
+    "model": "core.user",
+    "pk": 3,
+    "fields": {
+      "username": "master_john",
+      "email": "john.master@atg.ru",
+      "password": "pbkdf2_sha256$260000$J6p4FzUJxQ5c1Y8sPjX1a7$0x8VnT6W9vKZuGkYH5qLmW6wT8uVvZ7T6hRn0Z6Z3s="
+    }
+  },
+  {
+    "model": "core.user",
+    "pk": 4,
+    "fields": {
+      "username": "employee_anna",
+      "email": "anna.employee@atg.ru",
+      "password": "pbkdf2_sha256$260000$J6p4FzUJxQ5c1Y8sPjX1a7$0x8VnT6W9vKZuGkYH5qLmW6wT8uVvZ7T6hRn0Z6Z3s="
+    }
+  },
+  {
+    "model": "core.user",
+    "pk": 5,
+    "fields": {
+      "username": "tech_support",
+      "email": "support@atg.ru",
+      "password": "pbkdf2_sha256$260000$J6p4FzUJxQ5c1Y8sPjX1a7$0x8VnT6W9vKZuGkYH5qLmW6wT8uVvZ7T6hRn0Z6Z3s="
+    }
+  }
+]

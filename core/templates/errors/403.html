@@ -1,0 +1,90 @@
+{% load static %}
+{% block title %}Доступ запрещён | 403{% endblock %}
+
+{% block content %}
+<style>
+    .error-container {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 2rem;
+        background-color: #fff;
+    }
+
+    .icon-circle {
+        width: 120px;
+        height: 120px;
+        margin: 0 auto;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #8E3798, #574CA1, #4DA4CB);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 4rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    h1.error-title {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: #333;
+        margin-bottom: 1.5rem;
+    }
+
+    p.error-message {
+        font-size: 1.25rem;
+        color: #666;
+        max-width: 500px;
+        margin: 0 auto 2rem auto;
+    }
+
+    .btn-home {
+        background: linear-gradient(135deg, #8E3798, #574CA1, #4DA4CB);
+        color: white;
+        border: none;
+        padding: 0.75rem 2rem;
+        font-weight: 600;
+        font-size: 1.1rem;
+        border-radius: 50px;
+        transition: all 0.3s ease;
+    }
+
+    .btn-home:hover {
+        opacity: 0.9;
+        transform: translateY(-2px);
+    }
+
+    .support-info {
+        background-color: #f8f9fa;
+        color: #555;
+        border-radius: 10px;
+        padding: 1rem 1.5rem;
+        max-width: 500px;
+        margin: 0 auto;
+        font-size: 1rem;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
+</style>
+
+<div class="error-container">
+    <div class="w-100">
+        <div class="icon-circle mx-auto ">
+            !
+        </div>
+
+        <h1 class="error-title">Доступ запрещён</h1>
+        <p class="error-message">
+            У вас нет прав для просмотра этой страницы.
+        </p>
+
+        <div class="support-info mb-4">
+            Если вы считаете, что это ошибка, свяжитесь с администратором.
+        </div>
+
+    </div>
+</div>
+{% endblock %}

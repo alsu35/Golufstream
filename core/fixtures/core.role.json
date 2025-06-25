@@ -1,0 +1,34 @@
+[
+  {
+    "model": "core.role",
+    "pk": 1,
+    "fields": {
+      "code": "logist",
+      "name": "Логист"
+    }
+  },
+  {
+    "model": "core.role",
+    "pk": 2,
+    "fields": {
+      "code": "employee",
+      "name": "Сотрудник"
+    }
+  },
+  {
+    "model": "core.role",
+    "pk": 3,
+    "fields": {
+      "code": "admin",
+      "name": "Администратор"
+    }
+  },
+  {
+    "model": "core.role",
+    "pk": 4,
+    "fields": {
+      "code": "master",
+      "name": "Мастер"
+    }
+  }
+]

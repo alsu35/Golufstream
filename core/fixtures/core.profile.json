@@ -1,0 +1,87 @@
+[
+  {
+    "model": "core.profile",
+    "pk": 1,
+    "fields": {
+      "department": 7,
+      "user": 2,
+      "last_name": "Иванов",
+      "first_name": "Александр",
+      "middle_name": "Петрович",
+      "position": "Мастер по ремонту скважин",
+      "birth_date": "1985-03-12",
+      "role": 4,
+      "phone": "+7 912 345-67-89",
+      "location": 3,
+      "is_active": true
+    }
+  },
+  {
+    "model": "core.profile",
+    "pk": 2,
+    "fields": {
+      "department": 4,
+      "user": 3,
+      "last_name": "Петрова",
+      "first_name": "Мария",
+      "middle_name": "Сергеевна",
+      "position": "Логист",
+      "birth_date": "1990-07-22",
+      "role": 1,
+      "phone": "+7 927 123-45-67",
+      "location": 2,
+      "is_active": true
+    }
+  },
+  {
+    "model": "core.profile",
+    "pk": 3,
+    "fields": {
+      "department": 10,
+      "user": 4,
+      "last_name": "Смирнов",
+      "first_name": "Дмитрий",
+      "middle_name": "Алексеевич",
+      "position": "Инженер по промышленной безопасности",
+      "birth_date": "1988-11-05",
+      "role": 3,
+      "phone": "+7 987 654-32-10",
+      "location": 1,
+      "is_active": true
+    }
+  },
+  {
+    "model": "core.profile",
+    "pk": 4,
+    "fields": {
+      "department": 13,
+      "user": 5,
+      "last_name": "Кузнецова",
+      "first_name": "Елена",
+      "middle_name": null,
+      "position": "Оператор АСУ ТП",
+      "birth_date": "1995-09-18",
+      "role": 2,
+      "phone": "+7 903 123-45-67",
+      "location": 1,
+      "is_active": true
+    }
+  },
+  {
+    "model": "core.profile",
+    "pk": 5,
+    "fields": {
+      "department": 14,
+      "user": 1,
+      "last_name": "Морозов",
+      "first_name": "Алексей",
+      "middle_name": "Викторович",
+      "position": "Сервисный инженер по долотному сервису",
+      "birth_date": "1982-05-30",
+      "role": 4,
+      "phone": "+7 917 765-43-21",
+      "location": 1,
+      "is_active": false
+    }
+  }
+]

@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Список заявок</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+    {% load static %}
+    <link rel="icon" href="{% static 'img/favicon.png' %}" type="image/png" />
+    <link rel="shortcut icon" href="{% static 'img/favicon.ico' %}" type="image/x-icon" />
+
+    <!-- Flatpickr CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" rel="stylesheet" />
+
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+
+        .sortable {
+            cursor: pointer;
+            position: relative;
+        }
+
+        .sortable::after {
+            content: "▼";
+            position: absolute;
+            right: 5px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 0.8em;
+            color: #6c757d;
+            opacity: 0.5;
+        }
+
+        .sortable.asc::after {
+            content: "▲";
+            opacity: 1;
+        }
+
+        .sortable.desc::after {
+            content: "▼";
+            opacity: 1;
+        }
+
+        .search-filter-container {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 1.5rem;
+            padding: 1rem;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .search-filter-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            overflow-x: auto;
+            scrollbar-width: thin;
+            -ms-overflow-style: none;
+        }
+
+        .search-filter-row::-webkit-scrollbar {
+            height: 6px;
+        }
+
+        .search-filter-row::-webkit-scrollbar-thumb {
+            background-color: rgba(0, 0, 0, 0.2);
+            border-radius: 3px;
+        }
+
+        .searchInput {
+            max-width: 100%;
+        }
+
+        .search-filter-container .form-control {
+            min-width: 200px;
+            max-width: 100%;
+            height: 50px;
+        }
+
+        .search-filter-container .form-select {
+            min-width: 200px;
+            max-width: 50%;
+        }
+
+        .btn-clear-date {
+            background-color: #495057;
+            color: white;
+            border: 1px solid #495057;
+            padding: 0px 25px;
+            font-weight: bold;
+        }
+
+        .btn-clear-date:hover {
+            background-color: transparent;
+            border: 1px solid #ced4da;
+            color: #495057;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            position: relative;
+        }
+
+        .table thead th.actions,
+        .table tbody td.actions {
+            position: sticky;
+            left: 0;
+            background-color: #fff;
+            z-index: 1;
+            box-shadow: 1px 0 0 rgba(0, 0, 0, 0.1);
+        }
+
+        .table thead th.actions {
+            background-color: #343a40;
+        }
+
+        .status-badge {
+            font-weight: bold;
+            padding: 0.4em 0.8em;
+            border-radius: 5px;
+            color: #333;
+            font-size: 0.9rem;
+        }
+
+        .status-new {
+            background-color: #f4d867;
+        }
+
+        .status-assigned {
+            background-color: #d1b3ff;
+        }
+
+        .status-work {
+            background-color: #b2eac3;
+        }
+
+        .status-done {
+            background-color: #88c9ed;
+        }
+
+        .status-cancel {
+            background-color: #ff9696;
+        }
+
+        .btn-edit {
+            background: linear-gradient(135deg, #574ca1, #4da4cb);
+            color: white;
+            border: 1px solid transparent;
+            margin-top: 2px;
+        }
+
+        .btn-edit:hover {
+            opacity: 0.9;
+            border: 1px solid #574ca1;
+            background: transparent;
+        }
+
+        .btn-logout {
+            background: #e9ecef;
+            color: #333;
+            border: none;
+            margin-right: 1rem;
+            border: 1px solid #198754;
+        }
+
+        .btn-logout:hover {
+            background: #198754;
+            color: white;
+        }
+
+        .date-range {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .date-range input {
+            flex: 1;
+        }
+
+        @media (max-width: 768px) {
+            .search-filter-row {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container py-3">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>Список заявок</h2>
+            <div class="d-flex gap-2">
+                {% if perms.core.add_request %}
+                <a href="{% url 'request_create' %}" class="btn btn-success">Добавить заявку</a>
+                {% endif %}
+                <a href="{% url 'logout' %}" class="btn btn-logout">Выход</a>
+            </div>
+        </div>
+
+        <!-- Блок поиска и фильтрации -->
+        <div class="search-filter-container">
+            <!-- Поле поиска -->
+            <div class="w-100 mb-3">
+                <input type="text" id="searchInput" class="form-control" placeholder="Поиск по заявкам..." />
+            </div>
+
+            <!-- Фильтры в одной строке -->
+            <div class="search-filter-row d-flex flex-wrap gap-2 overflow-auto" style="scrollbar-width: thin">
+                <select id="statusFilter" class="form-select flex-grow-1" style="min-width: 150px; max-width: 200px">
+                    <option value="">Все статусы</option>
+                    {% for status in statuses %}
+                    <option value="{{ status.code }}">{{ status.name }}</option>
+                    {% endfor %}
+                </select>
+
+                <select id="locationFilter" class="form-select flex-grow-1" style="min-width: 150px; max-width: 200px">
+                    <option value="">Все локации</option>
+                    {% for location in locations %}
+                    <option value="{{ location.id }}">{{ location.name }}</option>
+                    {% endfor %}
+                </select>
+
+                <select id="categoryFilter" class="form-select flex-grow-1" style="min-width: 150px; max-width: 200px">
+                    <option value="">Все категории</option>
+                    {% for category in categories %}
+                    <option value="{{ category.code }}">{{ category.name }}</option>
+                    {% endfor %}
+                </select>
+
+                <!-- Период работ -->
+                <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                    <span class="text-nowrap">Период:</span>
+                    <input type="text" id="dateStartFilter" class="form-control" style="max-width: 120px"
+                        placeholder="От" />
+                    <input type="text" id="dateEndFilter" class="form-control" style="max-width: 120px"
+                        placeholder="До" />
+                    <button id="clearDateFilter" class="btn btn-clear-date">
+                        × Очистить
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table class="table table-striped table-hover align-middle" id="requestsTable">
+                <thead class="table-dark">
+                    <tr>
+                        <th class="actions" style="left: 0; z-index: 1">Действия</th>
+                        <th>#</th>
+                        <th id="sortDateHeader" class="sortable">Дата подачи ▼</th>
+                        <th>Объект работ</th>
+                        <th>Статус</th>
+                        <th>Локация</th>
+                        <th>Заказчик</th>
+                        <th>Подразделение</th>
+                        <th>Ответственный</th>
+                        <th>Категория техники</th>
+                        <th>Вид работ</th>
+                        <th>Период работ</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for request in requests %}
+                    <tr data-created-at="{{ request.created_at|date:'Y-m-d' }}" data-status="{{ request.status.code }}"
+                        data-location="{{ request.location.id }}"
+                        data-equipment-category="{{ request.equipment_category.code }}"
+                        data-customer="{{ request.customer.full_name|lower }}"
+                        data-responsible="{{ request.responsible.full_name|default:''|lower }}"
+                        data-work-type="{{ request.work_type|lower }}"
+                        data-department="{{ request.customer.department.name|lower }}"
+                        data-date-start="{{ request.date_start|date:'Y-m-d' }}"
+                        data-date-end="{{ request.date_end|date:'Y-m-d' }}">
+                        <td class="actions" style="left: 0; z-index: 1">
+                            <a href="{% url 'request_detail' request.id %}" class="btn btn-sm btn-outline-primary me-1">
+                                Подробнее
+                            </a>
+                            {% if perms.core.change_request %}
+                            <a href="{% url 'request_update' request.id %}" class="btn btn-sm btn-edit me-1">
+                                Редактировать
+                            </a>
+                            {% endif %} {% if perms.core.delete_request %}
+                            <a href="{% url 'request_delete' request.id %}" class="btn btn-sm btn-outline-danger">
+                                Удалить
+                            </a>
+                            {% endif %}
+                        </td>
+                        <td>{{ request.id }}</td>
+                        <td>{{ request.created_at|date:"d.m.Y H:i" }}</td>
+                        <td class="search-target">{{ request.work_object }}</td>
+                        <td>
+                            {% if request.status.code == 'new' %}
+                            <span class="status-badge status-new">{{ request.status.name }}</span>
+                            {% elif request.status.code == 'assigned' %}
+                            <span class="status-badge status-assigned">{{ request.status.name }}</span>
+                            {% elif request.status.code == 'work' %}
+                            <span class="status-badge status-work">{{ request.status.name }}</span>
+                            {% elif request.status.code == 'done' %}
+                            <span class="status-badge status-done">{{ request.status.name }}</span>
+                            {% elif request.status.code == 'cancel' %}
+                            <span class="status-badge status-cancel">{{ request.status.name }}</span>
+                            {% else %}
+                            <span class="status-badge" style="background-color: #e9ecef">{{ request.status.name
+                                }}</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ request.location.name }}</td>
+                        <td>{{ request.customer.full_name }}</td>
+                        <td>{{ request.customer.department.name }}</td>
+                        <td>
+                            {% if request.responsible %} {{ request.responsible.full_name }}
+                            {% else %} — {% endif %}
+                        </td>
+                        <td>{{ request.get_equipment_category_display }}</td>
+                        <td>{{ request.work_type }}</td>
+                        <td>
+                            {% if request.date_start and request.date_end and
+                            request.date_start != request.date_end %} с {{
+                            request.date_start|date:"d.m" }} по {{
+                            request.date_end|date:"d.m" }}<br />
+                            {% else %} {{ request.date_start|date:"d.m" }}<br />
+                            {% endif %}
+                            <small class="text-muted">
+                                {{ request.time_start|time:"H:i" }} – {{
+                                request.time_end|time:"H:i" }}
+                            </small>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="12" class="text-center">Нет заявок</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Flatpickr JS -->
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ru.js"></script>
+
+    <!-- Скрипты для поиска и фильтрации -->
+    <script>
+        // Инициализация календаря
+        const dateStartPicker = flatpickr("#dateStartFilter", {
+            locale: "ru",
+            dateFormat: "Y-m-d",
+            altFormat: "d.m.Y",
+            altInput: true,
+            allowInput: true,
+            onChange: function (selectedDates, dateStr, instance) {
+                filterRequests();
+            },
+        });
+
+        const dateEndPicker = flatpickr("#dateEndFilter", {
+            locale: "ru",
+            dateFormat: "Y-m-d",
+            altFormat: "d.m.Y",
+            altInput: true,
+            allowInput: true,
+            onChange: function (selectedDates, dateStr, instance) {
+                filterRequests();
+            },
+        });
+
+        // Очистка периода
+        document
+            .getElementById("clearDateFilter")
+            .addEventListener("click", function () {
+                dateStartPicker.clear();
+                dateEndPicker.clear();
+                filterRequests();
+            });
+
+        let sortDirection = "desc"; // По умолчанию сортировка по убыванию
+
+        // Сортировка по дате подачи
+        function sortTableByDate() {
+            const tbody = document.querySelector("#requestsTable tbody");
+            const rows = Array.from(tbody.querySelectorAll("tr"));
+
+            // Определяем направление сортировки
+            sortDirection = sortDirection === "asc" ? "desc" : "asc";
+
+            // Обновляем иконку
+            const header = document.getElementById("sortDateHeader");
+            header.classList.toggle("asc", sortDirection === "asc");
+            header.classList.toggle("desc", sortDirection === "desc");
+
+            // Сортируем
+            rows.sort((a, b) => {
+                const dateA = a.getAttribute("data-created-at");
+                const dateB = b.getAttribute("data-created-at");
+                return sortDirection === "asc"
+                    ? dateA.localeCompare(dateB)
+                    : dateB.localeCompare(dateA);
+            });
+
+            // Перерисовываем таблицу
+            rows.forEach((row) => tbody.appendChild(row));
+        }
+
+        function filterRequests() {
+            const searchInput = document
+                .getElementById("searchInput")
+                .value.trim()
+                .toLowerCase();
+            const statusFilter = document.getElementById("statusFilter").value;
+            const locationFilter = document.getElementById("locationFilter").value;
+            const categoryFilter = document.getElementById("categoryFilter").value;
+            const dateStartFilter =
+                document.getElementById("dateStartFilter").value;
+            const dateEndFilter = document.getElementById("dateEndFilter").value;
+
+            const rows = document.querySelectorAll("#requestsTable tbody tr");
+
+            rows.forEach((row) => {
+                // Получаем данные из data-атрибутов
+                const createdAt = row.getAttribute("data-created-at");
+                const status = row.getAttribute("data-status");
+                const location = row.getAttribute("data-location");
+                // const category = row.getAttribute('data-category');
+                const customer = row.getAttribute("data-customer");
+                const responsible = row.getAttribute("data-responsible");
+                const workType = row.getAttribute("data-work-type");
+                const department = row.getAttribute("data-department");
+                const equipmentCategory = row.getAttribute("data-equipment-category");
+                const rowDateStart = row.getAttribute("data-date-start");
+                const rowDateEnd = row.getAttribute("data-date-end");
+
+                // Поиск по тексту
+                const searchMatch =
+                    customer.includes(searchInput) ||
+                    responsible.includes(searchInput) ||
+                    workType.includes(searchInput) ||
+                    department.includes(searchInput) ||
+                    request.status.name.toLowerCase().includes(searchInput);
+
+                // Фильтрация по статусу
+                const statusMatch = !statusFilter || status === statusFilter;
+
+                // Фильтрация по локации
+                const locationMatch = !locationFilter || location === locationFilter;
+
+                // Фильтрация по категории
+                const categoryMatch =
+                    !categoryFilter || equipmentCategory === categoryFilter;
+
+                // Фильтрация по дате
+                let dateMatch = true;
+                if (dateStartFilter || dateEndFilter) {
+                    if (rowDateStart && rowDateEnd) {
+                        dateMatch =
+                            (!dateStartFilter || rowDateStart >= dateStartFilter) &&
+                            (!dateEndFilter || rowDateEnd <= dateEndFilter);
+                    } else {
+                        dateMatch = false;
+                    }
+                }
+
+                // Применяем фильтры
+                if (
+                    searchMatch &&
+                    statusMatch &&
+                    locationMatch &&
+                    categoryMatch &&
+                    dateMatch
+                ) {
+                    row.style.display = "";
+                } else {
+                    row.style.display = "none";
+                }
+            });
+        }
+        // Обработчики событий
+        document
+            .getElementById("searchInput")
+            .addEventListener("input", filterRequests);
+        document
+            .getElementById("statusFilter")
+            .addEventListener("change", filterRequests);
+        document
+            .getElementById("locationFilter")
+            .addEventListener("change", filterRequests);
+        document
+            .getElementById("categoryFilter")
+            .addEventListener("change", filterRequests);
+        document
+            .getElementById("sortDateHeader")
+            .addEventListener("click", sortTableByDate);
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,26 @@
+[
+  {
+    "model": "core.organizationlocation",
+    "pk": 1,
+    "fields": {
+      "code": "alm",
+      "name": "Альметьевск"
+    }
+  },
+  {
+    "model": "core.organizationlocation",
+    "pk": 2,
+    "fields": {
+      "code": "nch",
+      "name": "Нижнекамск"
+    }
+  },
+  {
+    "model": "core.organizationlocation",
+    "pk": 3,
+    "fields": {
+      "code": "ext",
+      "name": "Внешний"
+    }
+  }
+]
