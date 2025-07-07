@@ -1,82 +1,52 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
-from mptt.models import MPTTModel, TreeForeignKey
 from django.utils.translation import gettext_lazy as _
-from django.core.validators import MinLengthValidator
 from django.core.exceptions import ValidationError
-from django.utils import timezone
+from django.core.cache import cache
+from datetime import datetime
 
-# --- Локация организации ---
-class OrganizationLocation(models.Model):
-    """Локация организации (Альметьевск, Нижнекамск, Внешний)"""
-    code = models.CharField(
-        _('Код локации'),
-        max_length=20,
-        unique=True,
-        help_text=_('Уникальный код локации (например: alm, nch, ext)')
-    )
-    name = models.CharField(
-        _('Наименование'),
-        max_length=100,
-        unique=True
-    )
-    
+class NamedModel(models.Model):
+    code = models.CharField(max_length=20, unique=True)
+    name = models.CharField(max_length=100, unique=True)
+
     class Meta:
-        verbose_name = _('Локация организации')
-        verbose_name_plural = _('Локации организаций')
+        abstract = True
         ordering = ['name']
-        
+
     def __str__(self):
         return self.name
 
-# --- Статус ---
-class Status(models.Model):
-    """Статусы заявок"""
-    code = models.CharField(
-        _('Код статуса'),
-        max_length=20,
-        unique=True,
-        help_text=_('Уникальный код статуса (например: new, work, done)')
-    )
-    name = models.CharField(
-        _('Наименование'),
-        max_length=100,
-        unique=True
-    )
-    
-    class Meta:
+# --- Статус заявки---
+class Status(NamedModel):
+    class Meta(NamedModel.Meta):
         verbose_name = _('Статус')
         verbose_name_plural = _('Статусы')
         ordering = ['name']
-        
-    def __str__(self):
-        return self.name
+
+# --- Локация организации ---
+class OrganizationLocation(NamedModel):
+    class Meta(NamedModel.Meta):
+        verbose_name = _('Локация организации')
+        verbose_name_plural = _('Локации организаций')
+        ordering = ['name']
 
 # --- Роль ---
-class Role(models.Model):
-    """Роли пользователей"""
-    code = models.CharField(
-        _('Код роли'),
-        max_length=20,
-        unique=True,
-        help_text=_('Уникальный код роли (например: admin, master)')
-    )
-    name = models.CharField(
-        _('Наименование'),
-        max_length=100,
-        unique=True
-    )
-    
-    class Meta:
+class Role(NamedModel):
+    class Meta(NamedModel.Meta):
         verbose_name = _('Роль')
         verbose_name_plural = _('Роли')
         ordering = ['name']
-        
-    def __str__(self):
-        return self.name
 
+# --- Категория ---
+class Category(NamedModel):
+    class Meta(NamedModel.Meta):
+        verbose_name = _('Категория')
+        verbose_name_plural = _('Категории')
+        ordering = ['name']
+    
+        
 # --- Организация ---
-class Organization(MPTTModel):
+class Organization(models.Model):
     """Организации в древовидной структуре (MPTT)"""
     name = models.CharField(
         _('Сокращенное наименование'),
@@ -88,23 +58,11 @@ class Organization(MPTTModel):
         _('Полное наименование'),
         max_length=255
     )
-    parent = TreeForeignKey(
-        'self',
-        verbose_name=_('Родительская организация'),
-        on_delete=models.PROTECT,
-        null=True, blank=True,
-        related_name='children',
-        db_index=True
-    )
     inn = models.CharField(
         _('ИНН'),
         max_length=12,
         blank=True, null=True
     )
-
-    class MPTTMeta:
-        order_insertion_by = ['name']
-
     class Meta:
         verbose_name = _('Организация')
         verbose_name_plural = _('Организации')
@@ -124,14 +82,6 @@ class Department(models.Model):
         _('Наименование'),
         max_length=255
     )
-    parent = TreeForeignKey(
-        'self', 
-        on_delete=models.CASCADE, 
-        null=True, 
-        blank=True, 
-        related_name='children'
-    )
-    
     class Meta:
         verbose_name = _('Подразделение')
         verbose_name_plural = _('Подразделения')
@@ -166,6 +116,7 @@ class User(AbstractUser):
 # --- Профиль ---
 class Profile(models.Model):
     """Профили сотрудников"""
+    
     department = models.ForeignKey(
         Department,
         verbose_name=_('Подразделение'),
@@ -229,29 +180,6 @@ class Profile(models.Model):
     def full_name(self):
         return f"{self.last_name} {self.first_name} {self.middle_name or ''}".strip()
 
-# --- Категория ---
-class Category(models.Model):
-    """Категория транспорта"""
-    code = models.CharField(
-        _('Код категории'),
-        max_length=20,
-        unique=True,
-        help_text=_('Уникальный код роли (например: cargo, people, lifting)')
-    )
-    name = models.CharField(
-        _('Наименование'),
-        max_length=100,
-        unique=True
-    )
-    
-    class Meta:
-        verbose_name = _('Категория')
-        verbose_name_plural = _('Категории')
-        ordering = ['name']
-        
-    def __str__(self):
-        return self.name
-    
 # --- Заявка ---
 class Request(models.Model):
     """Заявки на выполнение работ""" 
@@ -259,7 +187,8 @@ class Request(models.Model):
         Profile,
         verbose_name=_('Подающий заявку (заказчик)'),
         on_delete=models.PROTECT,
-        related_name='customer_requests'
+        related_name='customer_requests', 
+        db_index=True
     )
     location = models.ForeignKey(
         OrganizationLocation,
@@ -284,21 +213,19 @@ class Request(models.Model):
         _('Время начала работ')
     )
     time_end = models.TimeField(
-        _('Время окончания работ'),
-        null=True,
-        blank=True,
+        _('Время окончания работ')
     )
     is_completed_fact = models.BooleanField(
         _('Окончание работ по факту'),
         default=False,
         help_text=_('Отметка "Да" если работы будут завершены по факту')
     )
-    break_time = models.DurationField(
-        _('Предполагаемое время ожидания'),
-        null=True,
+    break_periods = models.JSONField(
+        _('Перерывы'),
         blank=True,
-        help_text=_('В формате ЧЧ:ММ:СС (необязательно)')
+        default=list
     )
+
     work_object = models.CharField(
         _('Объект работ'),
         max_length=255
@@ -322,8 +249,7 @@ class Request(models.Model):
         Profile,
         verbose_name=_('Ответственный'),
         on_delete=models.PROTECT,
-        related_name='responsible_requests',
-        null=True
+        related_name='responsible_requests'
     )
     comment = models.TextField(
         _('Комментарий'),
@@ -342,6 +268,7 @@ class Request(models.Model):
         max_length=100,
         blank=True,
         null=True,
+        db_index=True,
         help_text=_('Только для категории "Подъемные сооружения и такелаж"')
     )
     rigger_name = models.CharField(
@@ -366,35 +293,41 @@ class Request(models.Model):
     def __str__(self):
         return f"Заявка #{self.id} - {self.work_object}"
     
+
     def clean(self):
-        super().clean()
-        errors = {}
+            super().clean()
+            errors = {}
 
-        if self.date_start and self.date_end and self.date_start > self.date_end:
-            errors['date_end'] = 'Дата окончания не может быть раньше даты начала.'
+            # 1) Убедимся, что даты заполнены
+            if not (self.date_start and self.date_end):
+                errors['date_start'] = 'Укажите даты начала и окончания'
+            # 2) Убедимся, что время заполнено
+            elif not (self.time_start and self.time_end):
+                errors['time_start'] = 'Укажите время начала и окончания'
+            else:
+                # 3) Сравним реальные метки времени
+                dt_start = datetime.combine(self.date_start, self.time_start)
+                dt_end   = datetime.combine(self.date_end,   self.time_end)
+                if dt_end <= dt_start:
+                    errors['time_end'] = 'Дата и время окончания должны быть после начала'
 
-        if self.time_start and self.time_end and self.time_start > self.time_end:
-            errors['time_end'] = 'Время окончания не может быть раньше времени начала.'
+            # Проверка для подъемных сооружений
+            if self.equipment_category.code == 'lifting':
+                if not self.responsible_certificate:
+                    errors['responsible_certificate'] = 'Для подъёмных сооружений обязательен номер удостоверения ответственного'
+                if not self.rigger_name:
+                    errors['rigger_name'] = 'Для подъёмных сооружений укажите ФИО стропальщиков через запятую'
+                if not self.rigger_certificates:
+                    errors['rigger_certificates'] = 'Для подъёмных сооружений укажите номера удостоверений стропальщиков через запятую'
+            else:
+                self.responsible_certificate = None
+                self.rigger_name = None
+                self.rigger_certificates = None
 
-        if self.equipment_category == 'lifting':
-            if not self.responsible_certificate:
-                errors['responsible_certificate'] = 'Для подъёмных сооружений обязательен номер удостоверения ответственного'
-            if not self.rigger_name:
-                errors['rigger_name'] = 'Для подъёмных сооружений укажите ФИО стропальщиков через запятую'
-            if not self.rigger_certificates:
-                errors['rigger_certificates'] = 'Для подъёмных сооружений укажите номера удостоверений стропальщиков через запятую'
-        else:
-            self.responsible_certificate = None
-            self.rigger_name = None
-            self.rigger_certificates = None
-
-        if errors:
-            raise ValidationError(errors)
-    
+            if errors:
+                raise ValidationError(errors)
+            
     def save(self, *args, **kwargs):
         """Автоматическая обработка перед сохранением"""
-        self.full_clean()  # Выполняем валидацию
+        self.full_clean()
         super().save(*args, **kwargs)
-
-
-

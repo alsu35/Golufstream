@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ru">
+
 <head>
     <meta charset="UTF-8">
     <title>Заявка #{{ req.id }}</title>
@@ -9,14 +10,16 @@
     <link rel="shortcut icon" href="{% static 'img/favicon.ico' %}" type="image/x-icon">
 
     <!-- Bootstrap 5 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"  rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body {
             background-color: #f8f9fa;
         }
+
         .card-header {
             background-color: #f1f3f5;
         }
+
         .status-badge {
             font-size: 1.1rem;
             font-weight: bold;
@@ -25,104 +28,254 @@
             color: white;
             background: linear-gradient(135deg, #8E3798, #574CA1, #4DA4CB);
         }
+
+        .modal-header {
+            background: linear-gradient(135deg, #8E3798, #574CA1, #4DA4CB);
+            color: white;
+        }
+
+        .card-header.status-new {
+            background-color: #f4d867 !important;
+        }
+
+        .card-header.status-assigned {
+            background-color: #D1B3FF !important;
+        }
+
+        .card-header.status-work {
+            background-color: #B2EAC3 !important;
+        }
+
+        .card-header.status-done {
+            background-color: #88c9ed !important;
+        }
+
+        .card-header.status-cancel {
+            background-color: #ff9696 !important;
+        }
+
+        .card-header.status-default {
+            background-color: #e9ecef !important;
+        }
     </style>
 </head>
+
 <body>
 
-<div class="container py-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>Заявка #{{ req.id }}</h2>
-        <span class="status-badge">
-            {{ req.status.name }}
-        </span>
+    <div class="container py-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>Заявка #{{ req.id }}</h2>
+            <p class="text-center align-items-center mt-2 fs-5">{{ req.location }}</p>
+            <span class=" status-badge">
+                {{ req.status.name }}
+            </span>
+        </div>
+
+        <!-- Даты и время -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header status-{{ req.status.code }}">
+                <h5 class="text-center mb-0">
+                    Подана заявка <strong>{{ req.created_at|date:'Y-m-d H:i' }}</strong>
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Дата начала смены:</strong> {{ req.date_start|date:"d.m.Y" }}</p>
+                        <p><strong>Время начала смены:</strong> {{ req.time_start|time:"H:i" }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Дата окончания смены:</strong> {{ req.date_end|date:"d.m.Y" }}</p>
+                        <p><strong>Время окончания смены:</strong> {{ req.time_end|time:"H:i" }}</p>
+                    </div>
+                </div>
+                {% if req.is_completed_fact %}
+                <div class="mt-2 text-center">
+                    <p class="text-success"><strong>Время окончания смены установлено по факту</strong></p>
+                </div>
+                {% endif %}
+
+
+                <div class="card-body">
+                    {% if req.break_periods %}
+                    <div class="alert alert-light border border-info bg-light p-3">
+                        {{ req.break_periods }}
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info d-flex align-items-center" role="alert">
+                        <i class="bi bi-exclamation-triangle-fill me-2 fs-5"></i>
+                        <div>
+                            Перерывы не указаны. Заявка будет выполняться без пауз.
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+
+            </div>
+        </div>
+
+
+        <!-- Информация о заказчике -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Заказчик</h5>
+                <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#customerModal">
+                    Подробнее
+                </button>
+            </div>
+            <div class="card-body">
+                <p class="mb-1"><strong>{{ req.customer.full_name }}</strong> - {{ req.customer.position }} -
+                    {{ req.customer.department.name }}</p>
+            </div>
+        </div>
+        <!-- Modal -->
+        <div class="modal fade" id="customerModal" tabindex="-1" aria-labelledby="customerModalLabel"
+            aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="customerModalLabel">Информация о заказчике</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p><strong>ФИО:</strong> {{ req.customer.full_name }}</p>
+                        <p><strong>Дата рождения:</strong> {{ req.customer.birth_date|date:"d.m.Y" }}</p>
+                        <p><strong>Должность:</strong> {{ req.customer.position }}</p>
+                        <p><strong>Организация:</strong>
+                            {% if req.customer and req.customer.department and req.customer.department.organization %}
+                            {% if req.customer.department.organization.parent %}
+                            {{ req.customer.department.organization.parent.name }} -
+                            {% endif %}
+                            {{ req.customer.department.organization.name }} - {{ req.customer.department.name }}
+                            {% else %}
+                            Нет данных об организации.
+                            {% endif %}
+                        </p>
+
+                        <p><strong>Телефон:</strong> {{ req.customer.phone|default:"—" }}</p>
+                        {% if req.customer.user %}
+                        <p><strong>Email:</strong> {{ req.customer.user.email|default:"—" }}</p>
+                        {% endif %}
+                        <p><strong>Локация:</strong> {{ req.customer.location.name }}</p>
+                        <p><strong>Статус:</strong> {% if req.customer.is_active %}Активен{% else %}Не активен
+                            {% endif %}</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Информация об ответственном -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Ответственный</h5>
+                <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal"
+                    data-bs-target="#responsibleModal">
+                    Подробнее
+                </button>
+            </div>
+            <div class="card-body">
+                <p class="mb-1"><strong>{{ req.responsible.full_name }}</strong> -
+                    {{ req.responsible.position }} -
+                    {{ req.responsible.department.name }}</p>
+            </div>
+        </div>
+        <!-- Modal -->
+        <div class="modal fade" id="responsibleModal" tabindex="-1" aria-labelledby="responsibleModalLabel"
+            aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="responsibleModalLabel">Информация об ответственном</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p><strong>ФИО:</strong> {{ req.responsible.full_name }}</p>
+                        <p><strong>Дата рождения:</strong> {{ req.responsible.birth_date|date:"d.m.Y" }}</p>
+                        <p><strong>Должность:</strong> {{ req.responsible.position }}</p>
+                        <p><strong>Организация:</strong>
+                            {% if req.customer and req.customer.department and req.customer.department.organization%}
+                            {% if req.customer.department.organization.parent %}
+                            {{ req.customer.department.organization.parent.name }} -
+                            {% endif %}
+                            {{ req.customer.department.organization.name }} - {{ req.customer.department.name }}
+                            {% else %}
+                            Нет данных об организации.
+                            {% endif %}
+                        </p>
+                        <p><strong>Телефон:</strong> {{ req.responsible.phone|default:"—" }}</p>
+                        {% if req.responsible.user %}
+                        <p><strong>Email:</strong> {{ req.responsible.user.email|default:"—" }}</p>
+                        {% endif %}
+                        <p><strong>Локация:</strong> {{ req.responsible.location.name }}</p>
+                        <p><strong>Статус:</strong> {% if req.responsible.is_active %}Активен{% else %}Не активен
+                            {% endif %}</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Основная информация -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Основная информация</h5>
+            </div>
+            <div class="card-body">
+                <p class="mb-1"><strong>Объект работ:</strong> {{ req.work_object }}</p>
+                <p class="mb-1"><strong>Вид работ:</strong> {{ req.work_type }}</p>
+                <p class="mb-1"><strong>Транспорт:</strong> {{ req.transport_type }}</p>
+                <p class="mb-0"><strong>Категория техники:</strong> {{ req.equipment_category }}</p>
+
+
+            </div>
+        </div>
+
+
+        <!-- Специфика для подъемных сооружений -->
+        {% if req.equipment_category.code == 'lifting' %}
+        <div class="card shadow-sm mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Специфика (подъемные сооружения)</h5>
+            </div>
+            <div class="card-body">
+                <p class="mb-1"><strong>Номер удостоверения ответственного:</strong>
+                    {{ req.responsible_certificate }}
+                </p>
+                <p class="mb-1"><strong>Стропальщики:</strong> {{ req.rigger_name }}</p>
+                <p class="mb-0"><strong>Удостоверения стропальщиков:</strong> {{ req.rigger_certificates }}</p>
+            </div>
+        </div>
+        {% endif %}
+
+
+
+        <!-- Комментарий -->
+        {% if req.comment %}
+        <div class="card shadow-sm mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Комментарий</h5>
+            </div>
+            <div class="card-body">
+                <p class="mb-0">{{ req.comment }}</p>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Кнопка назад -->
+        <div class="mt-4">
+            <a href="/requests/" class="btn btn-outline-secondary">
+                ← Назад к списку заявок
+            </a>
+        </div>
     </div>
 
-    <!-- Информация о заказчике -->
-    <div class="card shadow-sm mb-4">
-        <div class="card-header">
-            <h5 class="mb-0">Заказчик</h5>
-        </div>
-        <div class="card-body">
-            <p class="mb-1"><strong>ФИО:</strong> {{ req.customer.full_name }}</p>
-            <p class="mb-1"><strong>Подразделение:</strong> {{ req.customer.department.name }}</p>
-            <p class="mb-0"><strong>Локация:</strong> {{ req.location.name }}</p>
-        </div>
-    </div>
-
-    <!-- Информация об ответственном -->
-    {% if req.responsible %}
-    <div class="card shadow-sm mb-4">
-        <div class="card-header">
-            <h5 class="mb-0">Ответственный</h5>
-        </div>
-        <div class="card-body">
-            <p class="mb-1"><strong>ФИО:</strong> {{ req.responsible.full_name }}</p>
-            <p class="mb-0"><strong>Должность:</strong> {{ req.responsible.position }}</p>
-        </div>
-    </div>
-    {% endif %}
-
-    <!-- Основная информация -->
-    <div class="card shadow-sm mb-4">
-        <div class="card-header">
-            <h5 class="mb-0">Основная информация</h5>
-        </div>
-        <div class="card-body">
-            <p class="mb-1"><strong>Объект работ:</strong> {{ req.work_object }}</p>
-            <p class="mb-1"><strong>Вид работ:</strong> {{ req.work_type }}</p>
-            <p class="mb-1"><strong>Транспорт:</strong> {{ req.transport_type }}</p>
-            <p class="mb-0"><strong>Категория техники:</strong> {{ req.get_equipment_category_display }}</p>
-        </div>
-    </div>
-
-    <!-- Даты и время -->
-    <div class="card shadow-sm mb-4">
-        <div class="card-header">
-            <h5 class="mb-0">Сроки работ</h5>
-        </div>
-        <div class="card-body">
-            <p class="mb-1"><strong>Дата начала:</strong> {{ req.date_start|date:"d.m.Y" }}</p>
-            <p class="mb-1"><strong>Дата окончания:</strong> {{ req.date_end|date:"d.m.Y" }}</p>
-            <p class="mb-1"><strong>Время начала:</strong> {{ req.time_start|time:"H:i" }}</p>
-            <p class="mb-0"><strong>Время окончания:</strong> {{ req.time_end|time:"H:i" }}</p>
-        </div>
-    </div>
-
-    <!-- Комментарий -->
-    {% if req.comment %}
-    <div class="card shadow-sm mb-4">
-        <div class="card-header">
-            <h5 class="mb-0">Комментарий</h5>
-        </div>
-        <div class="card-body">
-            <p class="mb-0">{{ req.comment }}</p>
-        </div>
-    </div>
-    {% endif %}
-
-    <!-- Специфика для подъемных сооружений -->
-    {% if req.equipment_category == 'lifting' %}
-    <div class="card shadow-sm mb-4">
-        <div class="card-header">
-            <h5 class="mb-0">Специфика (подъемные сооружения)</h5>
-        </div>
-        <div class="card-body">
-            <p class="mb-1"><strong>Номер удостоверения ответственного:</strong> {{ req.responsible_certificate }}</p>
-            <p class="mb-1"><strong>Стропальщики:</strong> {{ req.rigger_name }}</p>
-            <p class="mb-0"><strong>Удостоверения стропальщиков:</strong> {{ req.rigger_certificates }}</p>
-        </div>
-    </div>
-    {% endif %}
-
-    <!-- Кнопка назад -->
-    <div class="mt-4">
-        <a href="/requests/" class="btn btn-outline-secondary">
-            ← Назад к списку заявок
-        </a>
-    </div>
-</div>
-
-<!-- Bootstrap JS -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script> 
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
+
 </html>

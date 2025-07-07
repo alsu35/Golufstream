@@ -1,0 +1,130 @@
+[
+  {
+    "model": "core.category",
+    "pk": 1,
+    "fields": {
+      "code": "cargo",
+      "name": "Перевозка грузов"
+    }
+  },
+  {
+    "model": "core.category",
+    "pk": 2,
+    "fields": {
+      "code": "people",
+      "name": "Перевозка людей"
+    }
+  },
+  {
+    "model": "core.category",
+    "pk": 3,
+    "fields": {
+      "code": "lifting",
+      "name": "Подъемные сооружения"
+    }
+  },
+  {
+    "model": "core.category",
+    "pk": 4,
+    "fields": {
+      "code": "special",
+      "name": "Специализированная техника"
+    }
+  },
+  {
+    "model": "core.organizationlocation",
+    "pk": 1,
+    "fields": {
+      "code": "alm",
+      "name": "Альметьевск"
+    }
+  },
+  {
+    "model": "core.organizationlocation",
+    "pk": 2,
+    "fields": {
+      "code": "nch",
+      "name": "Нижнекамск"
+    }
+  },
+  {
+    "model": "core.organizationlocation",
+    "pk": 3,
+    "fields": {
+      "code": "ext",
+      "name": "Внешний"
+    }
+  },
+  {
+    "model": "core.role",
+    "pk": 1,
+    "fields": {
+      "code": "operator",
+      "name": "Оператор"
+    }
+  },
+  {
+    "model": "core.role",
+    "pk": 2,
+    "fields": {
+      "code": "employee",
+      "name": "Сотрудник"
+    }
+  },
+  {
+    "model": "core.role",
+    "pk": 3,
+    "fields": {
+      "code": "admin",
+      "name": "Администратор"
+    }
+  },
+  {
+    "model": "core.role",
+    "pk": 4,
+    "fields": {
+      "code": "customer",
+      "name": "Заказчик"
+    }
+  },
+  {
+    "model": "core.status",
+    "pk": 1,
+    "fields": {
+      "code": "new",
+      "name": "Новая"
+    }
+  },
+  {
+    "model": "core.status",
+    "pk": 2,
+    "fields": {
+      "code": "assigned",
+      "name": "Назначена"
+    }
+  },
+  {
+    "model": "core.status",
+    "pk": 3,
+    "fields": {
+      "code": "work",
+      "name": "В работе"
+    }
+  },
+  {
+    "model": "core.status",
+    "pk": 4,
+    "fields": {
+      "code": "done",
+      "name": "Выполнена"
+    }
+  },
+  {
+    "model": "core.status",
+    "pk": 5,
+    "fields": {
+      "code": "cancel",
+      "name": "Отменена"
+    }
+  }
+]

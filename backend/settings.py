@@ -57,12 +57,12 @@ MIDDLEWARE = [
 ROOT_URLCONF = 'backend.urls'
 LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = '/'  # перенаправлять после входа
-LOGOUT_REDIRECT_URL = '/accounts/login/'  # перенаправлять после выхода
+LOGOUT_REDIRECT_URL = '/login/'  # перенаправлять после выхода
 # DEBUG = False #выход на кастом ошибки
 # ALLOWED_HOSTS = ['yourdomain.com', 'www.yourdomain.com'] #изменить домены АЛСУ
 
 # Настройки сессий
-SESSION_COOKIE_AGE = 24*60*60  # 1 день
+SESSION_COOKIE_AGE = 24*60*60 # 1 день
 SESSION_SAVE_EVERY_REQUEST = False
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SECURE = True  # Только через HTTPS

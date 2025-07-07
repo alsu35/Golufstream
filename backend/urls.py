@@ -1,15 +1,17 @@
-# backend/urls.py
-
 from django.contrib import admin
-from django.contrib.auth import views as auth_views
-from django.urls import path, include
+from django.urls import path
+from django.views.generic.base import RedirectView
 from core.views import (
+    login_view, 
     custom_logout_view,
     redirect_after_login_view,
     request_list_view,
     request_detail_view,
     request_create_view,
     request_update_view,
+    request_cancel_view,
+    update_status,
+    update_responsible,
     custom_405,
     custom_401,
     custom_404,   
@@ -22,19 +24,22 @@ urlpatterns = [
     path('', redirect_after_login_view, name='index'),
     path('admin/', admin.site.urls),
 
-    path('accounts/login/', auth_views.LoginView.as_view(
-        template_name='registration/login.html',
-        redirect_authenticated_user=True
-    ), name='login'),
-    path('accounts/logout/', custom_logout_view, name='logout'),
-    path('accounts/', include('django.contrib.auth.urls')),
+    path('login/', login_view, name='login'),
+    path('admin/logout/', RedirectView.as_view(url='/custom-logout/', permanent=False)),  
+    path('logout/', custom_logout_view, name='logout'),
 
+    # Заявки
     path('requests/', request_list_view, name='request_list'),
     path('requests/<int:pk>/', request_detail_view, name='request_detail'),
     path('requests/create/', request_create_view, name='request_create'),
     path('requests/<int:pk>/edit/', request_update_view, name='request_update'),
+    path('requests/<int:pk>/cancel/', request_cancel_view, name='request_cancel'),
+
+    path("requests/update-status/", update_status, name="update_status"),
+    path("requests/update-responsible/", update_responsible, name="update_responsible"),
 ]
 
+# Обработчики ошибок
 handler405 = 'core.views.custom_405'
 handler401 = 'core.views.custom_401'
 handler404 = 'core.views.custom_404'

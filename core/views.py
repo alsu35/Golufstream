@@ -1,190 +1,343 @@
+import json
+from django.http import JsonResponse
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
-from django.http import HttpResponseForbidden, HttpResponseServerError
+from django.views.decorators.http import require_POST
+from django.http import HttpResponseForbidden, HttpResponseServerError, JsonResponse
 from django.contrib import messages
-from .models import Request, Status, OrganizationLocation
-from .forms import RequestForm
+from django.urls import reverse
+from django.core.cache import cache
 from django.contrib.auth import logout, authenticate, login
 
-def custom_logout_view(request):
-    logout(request)
-    return redirect('login') 
+from .models import Request, Status, OrganizationLocation, Category, Profile
+from .forms import RequestForm, LoginForm
 
-def _has_basic_access(user, profile):
-    return (profile is None and not user.is_superuser) or (
-        profile and profile.role and profile.role.code == 'employee'
-    )
 
-def _has_master_access(user, profile):
-    return profile and profile.role and profile.role.code == 'master'
+# ———————— Helpers ————————
+def _get_cached(key, queryset_fn, timeout=60*15):
+    """Общая обёртка для кэша списков справочников."""
+    data = cache.get(key)
+    if data is None:
+        data = list(queryset_fn())
+        cache.set(key, data, timeout)
+    return data
 
+def get_cached_statuses():
+    return _get_cached('status_choices', lambda: Status.objects.only('code', 'name'))
+
+def get_cached_categories():
+    return _get_cached('category_choices', lambda: Category.objects.only('code', 'name'))
+
+def get_cached_locations():
+    return _get_cached('location_choices', lambda: OrganizationLocation.objects.only('code', 'name'))
+
+
+def _has_role(user, role_code):
+    """Удобный чек на роль через профиль."""
+    profile = getattr(user, 'profile', None)
+    return profile and profile.role.code == role_code
+
+
+# ———————— Auth Views ————————
 def login_view(request):
+    form = LoginForm(request.POST or None)
+
     if request.method == 'POST':
         username = request.POST.get('username')
         password = request.POST.get('password')
         remember = request.POST.get('remember')
 
         user = authenticate(request, username=username, password=password)
+        if user:
+                    login(request, user)
+                    request.session.set_expiry(24 * 60 * 60 if remember else 0)
+                    
+                    if user.is_superuser or _has_role(user, 'admin'):
+                        return redirect('/admin/')
 
-        if user is not None:
-            login(request, user)
-            
-            if remember:
-                request.session.set_expiry(24*60*60)
-            else:
-                request.session.set_expiry(0)
+                    return redirect('request_list')
+        messages.error(request, "Неверный логин или пароль")
 
-            return redirect('request_list')
-        else:
-            messages.error(request, "Неверный логин или пароль")
-        
-    return render(request, 'login.html')
+    return render(request, 'registration/login.html', {'form': form})
+
+@login_required
+def custom_logout_view(request):
+    logout(request)
+    return redirect('login')
+
 
 @login_required
 def redirect_after_login_view(request):
     user = request.user
-    profile = getattr(user, 'profile', None)
-
-    if user.is_superuser:
+    if user.is_superuser or _has_role(user, 'admin'):
         return redirect('/admin/')
-    
-    if _has_basic_access(user, profile):
-        return redirect('request_list')
-    
-    if _has_master_access(user, profile):
-        return redirect('request_list')
-    
-    return render(request, 'errors/403.html', status=403)
+    return redirect('request_list')
 
 
-@login_required
-def request_create_view(request):
-    if not request.user.has_perm('core.add_request'):
-        return HttpResponseForbidden()
-
-    if request.method == 'POST':
-        form = RequestForm(request.POST)
-        if form.is_valid():
-            req = form.save(commit=False)
-            # Установка профиля пользователя
-            if hasattr(request.user, 'profile'):
-                req.customer = request.user.profile
-            else:
-                return HttpResponseForbidden("Нет профиля пользователя")
-
-            # Автоустановка статуса
-            try:
-                req.status = Status.objects.get(code='new')
-            except Status.DoesNotExist:
-                return HttpResponseServerError("Статус с кодом 'new' не найден")
-
-            req.save()
-            return redirect('request_list')
-    else:
-        form = RequestForm()
-
-    return render(request, 'requests/request_form.html', {'form': form})
-
-@login_required
-def request_update_view(request, pk):
-    user = request.user
-    profile = getattr(user, 'profile', None)
-
-    if not (_has_basic_access(user, profile) or _has_master_access(user, profile) or user.is_superuser):
-        return HttpResponseForbidden()
-
-    req = get_object_or_404(Request, pk=pk)
-
-    if _has_basic_access(user, profile) and req.customer_id != profile.id:
-        return HttpResponseForbidden()
-
-    form = RequestForm(request.POST or None, instance=req)
-
-    # Мастер может редактировать только is_completed_fact
-    if _has_master_access(user, profile):
-        allowed = {'is_completed_fact'}
-        for field in list(form.fields):
-            if field not in allowed:
-                form.fields.pop(field)
-
-    if request.method == 'POST' and form.is_valid():
-        form.save()
-        messages.success(request, 'Заявка обновлена.')
-        return redirect('request_detail', pk=pk)
-
-    return render(request, 'requests/request_form.html', {'form': form, 'update': True})
-
+# ———————— CRUD для Request ————————
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render
+from .models import Request, Status, Category, OrganizationLocation, Profile
 
 @login_required
 def request_list_view(request):
     user = request.user
     profile = getattr(user, 'profile', None)
 
-    if not (_has_basic_access(user, profile) or _has_master_access(user, profile) or user.is_superuser):
-        return HttpResponseForbidden()
+    # Базовый QuerySet
+    qs = Request.objects.select_related(
+        'status',
+        'location',
+        'equipment_category',
+        'customer__department',
+        'customer__department__organization',
+        'responsible'
+    )
 
-    # Если пользователь имеет базовый доступ, но нет профиля — показываем все заявки
-    if _has_basic_access(user, profile) and profile:
-        qs = Request.objects.filter(customer=profile)
-    else:
-        qs = Request.objects.all()
+    # Если есть профиль и указана локация — фильтруем по ней
+    if profile and profile.location:
+        qs = qs.filter(location=profile.location)
 
-    statuses = Status.objects.all()
-    locations = OrganizationLocation.objects.all()
-    qs = qs.select_related('status', 'location')
+    # Если роль оператор — собираем ответственных из той же локации
+    responsibles = None
+    if profile and profile.role.code == 'operator' and profile.location:
+        responsibles = Profile.objects.filter(location=profile.location)
 
     return render(request, 'requests/request_list.html', {
         'requests': qs,
-        'statuses': statuses,
-        'locations': locations
+        'statuses': Status.objects.all(),
+        'locations': OrganizationLocation.objects.all(),
+        'categories': Category.objects.all(),
+        'profile': profile,
+        'responsibles': responsibles,
     })
+
+
+@require_POST
+@login_required
+def update_status(request):
+    data = json.loads(request.body)
+    profile = getattr(request.user, 'profile', None)
+
+    if not profile or profile.role.code != 'operator':
+        return JsonResponse({'success': False, 'error': 'Нет прав'}, status=403)
+
+    try:
+        req = Request.objects.get(id=data['request_id'])
+        if req.location != profile.location:
+            return JsonResponse({
+                'success': False, 
+                'error': 'Вы можете редактировать только заявки своей локации'
+            }, status=403)
+        
+        req.status = Status.objects.get(id=data['status_id'])
+        req.save()
+        
+        return JsonResponse({
+            'success': True,
+            'request_id': req.id,
+            'status_id': req.status.id,
+            'status_name': req.status.name
+        })
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+    
+@require_POST
+@login_required
+def update_responsible(request):
+    data = json.loads(request.body)
+    profile = getattr(request.user, 'profile', None)
+
+    if not profile or profile.role.code != 'operator':
+        return JsonResponse({'success': False, 'error': 'Нет прав'}, status=403)
+
+    try:
+        req = Request.objects.get(id=data['request_id'])
+        if req.location != profile.location:
+            return JsonResponse({
+                'success': False, 
+                'error': 'Вы можете редактировать только заявки своей локации'
+            }, status=403)
+        
+        if data.get('responsible_id'):
+            req.responsible = Profile.objects.get(id=data['responsible_id'])
+        else:
+            req.responsible = None
+        
+        req.save()
+        
+        return JsonResponse({
+            'success': True,
+            'request_id': req.id,
+            'responsible_id': req.responsible.id if req.responsible else None,
+            'responsible_name': req.responsible.full_name if req.responsible else '—'
+        })
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
 
 @login_required
 def request_detail_view(request, pk):
+    req = get_object_or_404(
+        Request.objects.select_related('customer__department__organization'),
+        pk=pk
+    )
     user = request.user
     profile = getattr(user, 'profile', None)
 
-    if not (_has_basic_access(user, profile) or _has_master_access(user, profile) or user.is_superuser):
-        return HttpResponseForbidden()
+    # суперпользователь и админ
+    if user.is_superuser or _has_role(user, 'admin'):
+        return render(request, 'requests/request_detail.html', {'req': req})
 
-    req = get_object_or_404(Request.objects.select_related('customer', 'status', 'location'), pk=pk)
+    # оператор = полный доступ (только просмотр)
+    if _has_role(user, 'operator'):
+        return render(request, 'requests/request_detail.html', {'req': req})
 
-    if _has_basic_access(user, profile) and req.customer_id != profile.id:
-        return HttpResponseForbidden()
+    # заказчик — только свои заявки
+    if _has_role(user, 'customer'):
+        if req.customer == profile:
+            return render(request, 'requests/request_detail.html', {'req': req})
+        return HttpResponseForbidden("Можно просматривать только свои заявки")
 
-    return render(request, 'requests/request_detail.html', {'req': req})
+    # сотрудник — заявки своей организации
+    if _has_role(user, 'employee'):
+        if req.customer.department.organization == profile.department.organization:
+            return render(request, 'requests/request_detail.html', {'req': req})
+        return HttpResponseForbidden("Можно просматривать только заявки своей организации")
 
-# ошибки
-def custom_404(request, exception=None):
-    return render(request, 'errors/404.html', status=404)
+    # без профиля — как сотрудник
+    if not profile:
+        return render(request, 'requests/request_detail.html', {'req': req})
 
-def custom_403(request, exception=None):
-    return render(request, 'errors/403.html', status=403)
+    return HttpResponseForbidden("Нет прав на просмотр заявки")
 
-def custom_405(request, exception=None):
-    return render(request, 'errors/405.html', status=405)
+
+@login_required
+def request_create_view(request):
+    user = request.user
+    profile = getattr(user, 'profile', None)
+
+    if not any([user.is_superuser, _has_role(user, 'admin'), _has_role(user, 'operator'), _has_role(user, 'customer')]):
+        return HttpResponseForbidden("Нет прав на создание заявки")
+
+    if request.method == 'POST':
+        form = RequestForm(request.POST)
+        if form.is_valid():
+            req = form.save(commit=False)
+            if not profile:
+                return HttpResponseForbidden("Профиль не найден")
+            req.customer = profile
+            req.location = profile.location
+            try:
+                req.status = Status.objects.get(code='new')
+            except Status.DoesNotExist:
+                return HttpResponseServerError("Статус 'new' не найден")
+            req.save()
+            return redirect('request_list')
+    else:
+        form = RequestForm()
+        if profile:
+            form.fields['location'].initial = profile.location_id
+            form.fields['location'].widget.attrs['readonly'] = True
+
+    return render(request, 'requests/request_form.html', {'form': form})
+
+
+@login_required
+def request_update_view(request, pk):
+    user = request.user
+    profile = getattr(user, 'profile', None)
+
+    if not any([user.is_superuser, _has_role(user, 'admin'), _has_role(user, 'operator'), _has_role(user, 'customer')]):
+        return HttpResponseForbidden("Нет прав на редактирование")
+
+    req = get_object_or_404(
+        Request.objects.select_related(
+            'customer', 'location', 'status', 'customer__department__organization'
+        ),
+        pk=pk
+    )
+
+    # operator – только по локации
+    if _has_role(user, 'operator') and req.location != profile.location:
+        return HttpResponseForbidden("Можно редактировать только по своей локации")
+
+    # customer – только свои и не в работе
+    if _has_role(user, 'customer'):
+        if req.customer != profile:
+            return HttpResponseForbidden("Можно редактировать только свои заявки")
+        if req.status.code == 'work':
+            return HttpResponseForbidden("Заявка в статусе 'work' не изменяется")
+
+    form = RequestForm(request.POST or None, instance=req, user=user)
+
+    # ограничиваем права заказчика
+    if _has_role(user, 'customer'):
+        form.fields.pop('status', None)
+        for f in list(form.fields):
+            if f not in ('is_completed_fact', 'comment'):
+                form.fields[f].widget.attrs['readonly'] = True
+                form.fields[f].required = False
+
+    if request.method == 'POST':
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Заявка обновлена')
+            return redirect('request_detail', pk=pk)
+        messages.error(request, 'Проверьте корректность полей')
+
+    return render(request, 'requests/request_form.html', {
+        'form': form,
+        'update': True,
+        'req': req,
+        'profile': profile,
+    })
+
+
+@login_required
+def request_cancel_view(request, pk):
+    user = request.user
+    profile = getattr(user, 'profile', None)
+
+    if not profile or profile.role.code not in ('operator', 'customer'):
+        return HttpResponseForbidden("Нет прав на отмену")
+
+    req = get_object_or_404(Request.objects.select_related('status'), pk=pk)
+
+    # customer – только свои
+    if profile.role.code == 'customer' and req.customer != profile:
+        return HttpResponseForbidden("Можно отменять только свои заявки")
+
+    if req.status.code == 'work':
+        messages.error(request, "Нельзя отменить заявку в работе")
+        return redirect('request_detail', pk=pk)
+
+    try:
+        cancel = Status.objects.get(code='cancel')
+        req.status = cancel
+        req.save()
+        messages.success(request, "Заявка отменена")
+    except Status.DoesNotExist:
+        messages.error(request, "Статус 'cancel' не найден")
+        return redirect('request_list')
+
+    return redirect('request_detail', pk=pk)
+
+
+# ———————— Ошибки ————————
+def custom_400(request, exception=None):
+    return render(request, 'errors/400.html', status=400)
 
 def custom_401(request, exception=None):
     return render(request, 'errors/401.html', status=401)
 
+def custom_403(request, exception=None):
+    return render(request, 'errors/403.html', status=403)
+
+def custom_404(request, exception=None):
+    return render(request, 'errors/404.html', status=404)
+
+def custom_405(request, exception=None):
+    return render(request, 'errors/405.html', status=405)
+
 def custom_500(request):
     return render(request, 'errors/500.html', status=500)
-
-def custom_400(request, exception=None):
-    return render(request, 'errors/400.html', status=400)
-
-
-#  ("logist1",  "Логистов",  "Логист",  "logist@example.com",  "logist"),
-#     ("employee1","Сотрудников","Сотрудник","emp@example.com",     "employee"),
-#     ("master1",  "Мастеров",  "Мастер",  "master@example.com",    "admin"), 
-# 'master2' 'master2'
-# http://127.0.0.1:8000/accounts/login/
-
-
-# Status.objects.create(code="new", name="Новая")
-# Status.objects.create(code="assigned", name="Назначена")
-# Status.objects.create(code="work", name="В работе")
-# Status.objects.create(code="done", name="Выполнена")
-# Status.objects.create(code="cancel", name="Отменена")
-
-        # 
