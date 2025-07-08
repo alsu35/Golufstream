@@ -34,6 +34,7 @@
             border-radius: 16px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
         }
+
         .form-title {
             position: relative;
             display: inline-block;
@@ -249,7 +250,6 @@
         .form-check-label {
             margin-top: 4px;
         }
-        
     </style>
 </head>
 
@@ -330,7 +330,8 @@
                 <div class="row g-3">
                     <!-- Дата начала -->
                     <div class="col-md-6 mb-3">
-                        <label for="{{ form.date_start.id_for_label }}" class="form-label">Дата начала<span class="star">*</span></label>
+                        <label for="{{ form.date_start.id_for_label }}" class="form-label">Дата начала<span
+                                class="star">*</span></label>
                         <div class="input-group">
                             {{ form.date_start }}
                         </div>
@@ -346,7 +347,7 @@
                         </label>
                         {{ form.date_end }}
                         {% if form.date_end.errors %}
-                            <div class="invalid-feedback d-block">{{ form.date_end.errors.as_text }}</div>
+                        <div class="invalid-feedback d-block">{{ form.date_end.errors.as_text }}</div>
                         {% endif %}
                     </div>
                     <!-- Время начала -->

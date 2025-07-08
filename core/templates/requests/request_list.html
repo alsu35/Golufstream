@@ -68,7 +68,12 @@
             content: "▼";
             opacity: 1;
         }
-
+        table thead th {
+            font-size: clamp(0.8rem, 0.4rem + 0.7vw, 1.2rem);
+        }
+        td {
+            font-size: clamp(0.6rem, 0.4rem + 0.9vw, 0.95rem)
+        }
         .search-filter-container {
             display: flex;
             flex-direction: column;
@@ -141,6 +146,10 @@
             position: relative;
         }
 
+        /*
+        * Стили для "закреплённой" колонки действий (кнопки: Подробнее, Редактировать и т.д.)
+        * Используется position: sticky, центрирование кнопок внутри ячейки
+        */
         .table thead th.actions,
         .table tbody td.actions {
             position: sticky;
@@ -150,6 +159,12 @@
             box-shadow: 1px 0 0 rgba(0, 0, 0, 0.1);
         }
 
+        /* Центрирование кнопок внутри .actions */
+        .actions {   
+            align-items: center;           /* небольшой отступ между кнопками */
+            text-align: center;            /* уменьшенный внутренний отступ */
+            white-space: nowrap;         /* запрет переноса кнопок на новую строку (опционально) */
+        }
         .table thead th.actions {
             background-color: #343a40;
         }
@@ -162,24 +177,55 @@
             font-size: 0.9rem;
         }
 
-        .status-new {
-            background-color: #f4d867;
+        .change-status {
+        /* можно задать отступы и min-width */
+        display: inline-block;
+        text-align: center;
         }
 
-        .status-assigned {
-            background-color: #d1b3ff;
+        /* Цветовые варианты */
+        .change-status.status-new {
+        background-color: #f4d867;
+        }
+        .change-status.status-assigned {
+        background-color: #d1b3ff;
+        }
+        .change-status.status-work {
+        background-color: #b2eac3;
+        }
+        .change-status.status-done {
+        background-color: #88c9ed;
+        }
+        .change-status.status-cancel {
+        background-color: #ff9696;
         }
 
-        .status-work {
-            background-color: #b2eac3;
+         /* Адаптивный размер текста кнопок */
+        .btn-responsive span.text {
+            font-size: calc(0.5rem + 0.4vw); 
+            white-space: nowrap;
+        }
+        /* Иконки по умолчанию скрыты */
+        .btn-responsive i {
+            display: none;
+        }
+        /* Если это селект — уберём стандартный белый фон и применим перекраску */
+        .change-status.form-select {
+        color: #333;
+        border: none;
         }
 
-        .status-done {
-            background-color: #88c9ed;
+        .btn-double{
+            background: transparent;
+            color: #4ca15e;
+            border: 1px solid #4ca15e;
+            margin-top: 2px;
         }
 
-        .status-cancel {
-            background-color: #ff9696;
+        .btn-double:hover {
+            opacity: 0.9;
+            color: white;
+            background:#4ca15e;;
         }
 
         .btn-edit {
@@ -243,13 +289,85 @@
 
         /* Стили для каждой опции: ФИО + должность */
         .select2-container--bootstrap-5 .select2-results__option .option-title {
-        display: block;
-        font-weight: 600;
+            display: block;
+            font-weight: 600;
         }
         .select2-container--bootstrap-5 .select2-results__option .option-sub {
-        display: block;
-        font-size: 0.85em;
-        color: #6c757d;
+            display: block;
+            font-size: 0.85em;
+            color: #6c757d;
+        }
+        .date-filter-container .text-nowrap {
+            display: none;
+        }
+
+        .date-filter-container .btn-clear-date span.text {
+            display: none;
+        }
+
+        .date-filter-container .btn-clear-date i.icon {
+            display: inline-block;
+        }
+
+        .date-filter-container .form-control {
+            max-width: 90px;
+            font-size: 0.7rem;
+            height: calc(1.8rem + 0.2vh);
+        }
+
+        /* Адаптивный размер текста */
+        .date-filter-container .text-nowrap,
+        .date-filter-container .btn-clear-date span.text {
+            font-size: calc(0.7rem + 0.3vw);
+        }
+
+        /* Высота полей ввода */
+        .date-filter-container .form-control {
+            height: calc(2rem + 0.2vh); /* адаптивная высота */
+            font-size: calc(0.65rem + 0.2vw);
+            padding: 0 0.5rem;
+        }
+
+        /* Иконка вместо текста при маленьком экране */
+        .btn-clear-date i.icon {
+            display: none;
+        }
+
+          /* Убираем внутренние отступы у td или делаем их минимальными */
+        .table td.status,
+        .table td.responsible {
+            padding-left: 0.5rem;
+            padding-right: 0.5rem;
+            white-space: nowrap;
+        }
+
+        /* Минимальная ширина для ячеек */
+        .table td.status {
+            min-width: 100px;
+        }
+
+        .table td.responsible {
+            min-width: 120px;
+        }
+
+        /* Для селекта — убираем стандартный padding у form-select */
+        .table td.responsible .form-select {
+            padding-left: 0.35rem;
+            padding-right: 0.35rem;
+            font-size: 0.8rem;
+        }
+
+        /* Если используется status-badge — тоже делаем компактным */
+        .table td.status .status-badge {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+        }
+
+        @media (max-width: 1570px) {
+            #requestsTable th:nth-child(13),
+            #requestsTable td:nth-child(13) {
+                display: none;
+            }
         }
 
         @media (max-width: 768px) {
@@ -299,10 +417,48 @@
                 align-items: center;
                 justify-content: center;
             }
+            .btn-responsive {
+                margin-right: 0 !important; 
+                gap: 0 !important;  
+                display: inline-block !important;       
+            }
+            .btn-responsive span.text {
+                display: none;
+
+            }
+            .btn-responsive i {
+                display: inline-block;
+                margin-right: 0;
+                display: block;
+            }
+            .table>:not(caption)>*>*{
+                padding: .2rem .3rem !important;
+            }
+            .search-filter-container{
+                margin-bottom: .7rem !important;
+                padding: .5rem !important;
+            }
+            .text-nowrap {
+                display: none;
+            }
+
+            .btn-clear-date span.text {
+            display: none;
+            }
+
+            .btn-clear-date i.icon {
+            display: inline-block;
+            }
+
+            .form-control,
+            .form-select  {
+            max-width: 90px;
+            font-size: 0.7rem;
+            height: calc(1.8rem + 0.2vh);
+            }
         }
 
         @media (max-width: 350px) {
-
             .btn.btn-success.btn-sm,
             .btn.btn-outline-secondary.btn-sm {
                 padding: 0.25rem 0.5rem;
@@ -389,7 +545,10 @@
                         style="max-width: 120px;" />
                     <input type="text" id="dateEndFilter" class="form-control" placeholder="До"
                         style="max-width: 120px;" />
-                    <button id="clearDateFilter" class="btn btn-clear-date">Очистить</button>
+                    <button id="clearDateFilter" class="btn btn-clear-date btn-sm d-flex align-items-center gap-1">
+                        <i class="bi bi-x-circle icon"></i>
+                        <span class="text">Очистить</span>
+                    </button>
                 </div>
             </div>
 
@@ -424,6 +583,7 @@
                         <!-- templates/requests/request_list.html -->
                         <tr 
                             data-id="{{ req.id }}"
+                            created-at="{{ req.created_at|date:'c' }}"
                             data-status="{{ req.status.code }}"
                             data-status-id="{{ req.status.id }}"
                             data-status-name="{{ req.status.name }}"
@@ -440,18 +600,36 @@
                         >
                         <!-- Действия, ID и Дата подачи -->
                         <td class="actions" style="left: 0; z-index: 1">
-                            <a href="{% url 'request_detail' req.pk %}"
-                                class="btn btn-sm btn-outline-primary me-1">Подробнее</a>
-                            {% if profile and profile.role.code in 'operator,customer' %}
+                            <!-- Подробнее -->
+                            <a href="{% url 'request_detail' req.pk %}" class="btn btn-sm btn-outline-primary me-1 btn-responsive d-flex align-items-center gap-1">
+                                <i class="bi bi-eye"></i>
+                                <span class="text">Подробнее</span>
+                            </a>
 
-                            <a href="{% url 'request_update' req.id %}"
-                                class="btn btn-sm btn-edit me-1">Редактировать</a>
+                            {% if profile and profile.role.code in 'operator,customer' %}
+                                <!-- Редактировать -->
+                                <a href="{% url 'request_update' req.id %}" class="btn btn-sm btn-edit me-1 btn-responsive d-flex align-items-center gap-1">
+                                <i class="bi bi-pencil-square"></i>
+                                <span class="text">Редактировать</span>
+                                </a>
                             {% endif %}
-                            {% if profile.role.code == 'customer' and req.status.code != 'cancel' %}
-                            <a href="{% url 'request_cancel' req.id %}"
-                                class="btn btn-sm btn-outline-danger mt-1">Отменить</a>
+
+                            {% if profile.role.code == 'customer' and req.status.code != 'cancel' and req.status.code != 'done' and req.status.code != 'work' %}
+                                <!-- Отменить -->
+                                <a href="{% url 'request_cancel' req.id %}" class="btn btn-sm btn-outline-danger mt-1 btn-responsive d-flex align-items-center gap-1">
+                                <i class="bi bi-x-circle"></i>
+                                <span class="text">Отменить</span>
+                                </a>
                             {% endif %}
-                        </td>
+
+                            {% if profile and profile.role.code in 'operator,customer' %}
+                                <!-- Дублировать -->
+                                <a href="{% url 'request_double' req.id %}" class="btn btn-sm btn-double me-1 btn-responsive d-flex align-items-center gap-1">
+                                <i class="bi bi-files"></i>
+                                <span class="text">Дублировать</span>
+                                </a>
+                            {% endif %}
+                            </td>
                         <td>{{ req.id }}</td>
                         <td>
                             <small class="text-muted">
@@ -487,18 +665,20 @@
                         <td>{{ req.work_object }}</td>
 
                         <!-- Статус -->
-                        <td>
-                            {% if profile.role.code == 'operator' %}
-                                <select class="form-select form-select-sm change-status" data-id="{{ req.id }}">
-                                    {% for s in statuses %}
-                                        <option value="{{ s.id }}" {% if s.id == req.status.id %}selected{% endif %}>
-                                            {{ s.name }}
-                                        </option>
-                                    {% endfor %}
-                                </select>
-                            {% else %}
-                                <span class="status-badge status-{{ req.status.code }}">{{ req.status.name }}</span>
-                            {% endif %}
+                        <td class="status">
+                        {% if profile.role.code == 'operator' %}
+                            <select class="form-select form-select-sm change-status" data-id="{{ req.id }}">
+                            {% for s in statuses %}
+                                <option value="{{ s.id }}" data-code="{{ s.code }}" {% if s.id == req.status.id %}selected{% endif %}>
+                                {{ s.name }}
+                                </option>
+                            {% endfor %}
+                            </select>
+                        {% else %}
+                            <span class="status-badge change-status status-{{ req.status.code }}" data-code="{{ req.status.code }}">
+                            {{ req.status.name }}
+                            </span>
+                        {% endif %}
                         </td>
 
                         <!-- Заказчик и Подразделение -->
@@ -506,19 +686,12 @@
                         <td>{{ req.customer.department.name }}</td>
 
                         <!-- Ответственный -->
-                        <td>
+                        <td class="responsible">
                         {% if profile.role.code == 'operator' %}
-                            <select
-                            class="form-select form-select-sm change-responsible"
-                            data-id="{{ req.id }}"
-                            style="width: 200px;" 
-                            >
+                            <select class="form-select form-select-sm change-responsible" data-id="{{ req.id }}" style="width: 140px;">
                             <option value="">—</option>
                             {% for u in responsibles %}
-                                <option value="{{ u.id }}"
-                                {% if req.responsible and u.id == req.responsible.id %}selected{% endif %}
-                                data-position="{{ u.position }}"
-                                >
+                                <option value="{{ u.id }}" {% if req.responsible and u.id == req.responsible.id %}selected{% endif %} data-position="{{ u.position }}">
                                 {{ u.full_name }}
                                 </option>
                             {% endfor %}
@@ -531,7 +704,6 @@
                             {% endif %}
                         {% endif %}
                         </td>
-
                     </div>
 
 
@@ -575,10 +747,10 @@
     <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ru.js "></script>
 
     
-    <!-- JS для фильтрации и inline-редактирования -->
+<!-- JS для фильтрации и inline‑редактирования -->
     <script>
     $(document).ready(function () {
-        // 1) Календарь
+        // 1) Инициализация календарей
         const dateStartPicker = flatpickr("#dateStartFilter", {
             locale: "ru",
             dateFormat: "Y-m-d",
@@ -596,52 +768,81 @@
             onChange:    filterRequests
         });
 
-        // 2) Очистка
+        // очистка полей
         $("#clearDateFilter").on("click", function () {
+            // Очистка дат
             dateStartPicker.clear();
             dateEndPicker.clear();
-            filterRequests();
+
+            // Очистка текстового поиска
+            $("#searchInput").val("");
+
+            // Сброс фильтров select
+            $("#statusFilter").val("");     
+            $("#locationFilter").val("");   
+            $("#categoryFilter").val("");   
+
+            // Сброс сортировки (удалить визуальные метки)
+            $(".sortable").removeClass("asc desc");
+
+            // Сброс порядка строк (если есть data-index)
+            const tbody = $("#requestsTable tbody");
+            const rows = tbody.find("tr").get();
+            rows.sort((a, b) => {
+                const aIndex = parseInt(a.getAttribute("data-index"));
+                const bIndex = parseInt(b.getAttribute("data-index"));
+                return aIndex - bIndex;
+            });
+            $.each(rows, (_, row) => tbody.append(row));
+
+            // Повторно применить фильтрацию
+            filterRequests?.();
         });
 
-        // 3) Сортировка по дате
+        // 3) Сортировка по дате подачи
         let sortDirection = "desc";
         $("#sortDateHeader").on("click", function () {
             const tbody = $("#requestsTable tbody");
-            const rows  = tbody.find("tr").get();
+            const rows = tbody.find("tr").get();
+
             sortDirection = sortDirection === "asc" ? "desc" : "asc";
-            rows.sort((a,b) => {
-                const aDate = a.getAttribute("created-at"),
-                    bDate = b.getAttribute("created-at");
+            $("#sortDateHeader").removeClass("asc desc").addClass(sortDirection);
+
+            rows.sort((a, b) => {
+                const aDate = new Date(a.getAttribute("created-at"));
+                const bDate = new Date(b.getAttribute("created-at"));
                 return sortDirection === "asc"
-                    ? aDate.localeCompare(bDate)
-                    : bDate.localeCompare(aDate);
+                    ? aDate - bDate
+                    : bDate - aDate;
             });
+
             $.each(rows, (_, row) => tbody.append(row));
         });
 
+
         // 4) Функция фильтрации
         function filterRequests() {
-            const searchValue   = $("#searchInput").val().trim().toLowerCase();
-            const statusFilter  = $("#statusFilter").val();
-            const locationFilter= $("#locationFilter").val();
-            const categoryFilter= $("#categoryFilter").val();
-            const dateStart     = $("#dateStartFilter").val();
-            const dateEnd       = $("#dateEndFilter").val();
+            const searchValue    = $("#searchInput").val().trim().toLowerCase();
+            const statusFilter   = $("#statusFilter").val();
+            const locationFilter = $("#locationFilter").val();
+            const categoryFilter = $("#categoryFilter").val();
+            const dateStart      = $("#dateStartFilter").val();
+            const dateEnd        = $("#dateEndFilter").val();
 
             $("#requestsTable tbody tr").each(function() {
                 const row    = $(this),
-                    reqId = (row.data("id")+""),
-                    status= row.data("status"),
-                    loc   = row.data("location"),
-                    cat   = row.data("equipment-category"),
-                    cust  = (row.data("customer")||""),
-                    resp  = (row.data("responsible")||""),
-                    wt    = (row.data("work-type")||""),
-                    wo    = (row.data("work-object")||""),
-                    trt   = (row.data("transport-type")||""),
-                    dept  = (row.data("department")||""),
-                    rs    = row.data("date-start"),
-                    re    = row.data("date-end");
+                    reqId  = String(row.data("id")),
+                    status = row.data("status"),
+                    loc    = row.data("location"),
+                    cat    = row.data("equipment-category"),
+                    cust   = row.data("customer")    || "",
+                    resp   = row.data("responsible")  || "",
+                    wt     = row.data("work-type")    || "",
+                    wo     = row.data("work-object")  || "",
+                    trt    = row.data("transport-type")|| "",
+                    dept   = row.data("department")   || "",
+                    rs     = row.data("date-start"),
+                    re     = row.data("date-end");
 
                 const textMatch = !searchValue
                     || reqId.includes(searchValue)
@@ -663,32 +864,50 @@
                         && (!dateEnd   || re <= dateEnd);
                 }
 
-                textMatch && statusMatch && locationMatch && categoryMatch && dateMatch
+                (textMatch && statusMatch && locationMatch && categoryMatch && dateMatch)
                     ? row.show()
                     : row.hide();
             });
         }
 
-        // 5) События фильтрации
+        // 5) События для фильтрации
         $("#searchInput").on("input", filterRequests);
         $("#statusFilter, #locationFilter, #categoryFilter").on("change", filterRequests);
 
-        // 6) Inline‑статус → AJAX
-        $(".change-status").on("change", function () {
-            const id = $(this).data("id"),
-                st = $(this).val();
+        // 6) Цвет статуса
+        function applyStatusColor($el) {
+            $el.removeClass('status-new status-assigned status-work status-done status-cancel');
+            const code = $el.data('code') || $el.find('option:selected').data('code');
+            if (code) {
+                $el.addClass(`status-${code}`);
+            }
+        }
+
+        // Инициализация цвета для всех change-status
+        $('.change-status, .status-badge.change-status').each(function(){
+            applyStatusColor($(this));
+        });
+
+        // Inline‑статус → цвет + AJAX
+        $('.change-status').filter('select').on('change', function(){
+            const $sel   = $(this),
+                id     = $sel.data("id"),
+                stId   = $sel.val(),
+                stCode = $sel.find('option:selected').data('code');
+
+            $sel.data('code', stCode);
+            applyStatusColor($sel);
+
             fetch("{% url 'update_status' %}", {
                 method: "POST",
                 headers: {
-                    "X-CSRFToken": document.querySelector('[name=csrfmiddlewaretoken]').value,
-                    "Content-Type": "application/json"
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ request_id: id, status_id: st })
+                body: JSON.stringify({ request_id: id, status_id: stId })
             })
             .then(r => r.json())
-            .then(js => {
-                if (!js.success) alert("Ошибка: " + js.error);
-            });
+            .then(js => { if (!js.success) alert('Ошибка: ' + js.error); });
         });
 
         // 7) Inline‑ответственный → Select2 + AJAX
@@ -698,8 +917,8 @@
                 position = $(option.element).data('position') || '';
             return $(`
                 <div>
-                    <span class="option-title">${title}</span>
-                    <span class="option-sub">${position}</span>
+                    <div>${title}</div>
+                    <small class="text-muted">${position}</small>
                 </div>
             `);
         }
@@ -708,13 +927,15 @@
             theme: 'bootstrap-5',
             placeholder: 'Выберите ответственного',
             allowClear: false,
-            width:     'resolve',
-            templateResult: formatResponsible,
+            width: 'resolve',
+            templateResult:    formatResponsible,
             templateSelection: formatResponsible,
             escapeMarkup: m => m
         }).on("change", function(){
-            const requestId = $(this).data("id"),
-                profId    = $(this).val();
+            const $sel         = $(this),
+                requestId    = $sel.data("id"),
+                responsibleId= $sel.val();
+
             fetch("{% url 'update_responsible' %}", {
                 method: "POST",
                 headers: {
@@ -722,20 +943,16 @@
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    request_id: requestId,
-                    responsible_id: profId
+                    request_id:     requestId,
+                    responsible_id: responsibleId
                 })
             })
             .then(r => r.json())
-            .then(js => {
-                if (!js.success) alert('Ошибка: ' + js.error);
-            });
+            .then(js => { if (!js.success) alert('Ошибка: ' + js.error); });
         });
 
-    });  // конец $(document).ready
+    }); // Конец document.ready
     </script>
 
-
 </body>
-
 </html>

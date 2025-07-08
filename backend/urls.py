@@ -12,6 +12,7 @@ from core.views import (
     request_cancel_view,
     update_status,
     update_responsible,
+    request_double,
     custom_405,
     custom_401,
     custom_404,   
@@ -35,9 +36,12 @@ urlpatterns = [
     path('requests/create/', request_create_view, name='request_create'),
     path('requests/<int:pk>/edit/', request_update_view, name='request_update'),
     path('requests/<int:pk>/cancel/', request_cancel_view, name='request_cancel'),
+    path('requests/<int:pk>/duplicate/', request_double, name='request_double'),
+
 
     path('api/update_status/', update_status, name='update_status'),
     path('api/update_responsible/', update_responsible, name='update_responsible'),
+
 
 ]
 

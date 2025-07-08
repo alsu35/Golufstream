@@ -119,7 +119,12 @@ def request_list_view(request):
 
     responsibles = None
     if profile and profile.role.code == 'operator' and profile.location:
-        responsibles = Profile.objects.filter(location=profile.location)
+        # Берём всех сотрудников в этой локации, но исключаем админов
+        responsibles = Profile.objects.filter(
+            location=profile.location
+        ).exclude(
+            role__code='admin'
+        )
 
     return render(request, 'requests/request_list.html', {
         'requests': qs,
@@ -332,6 +337,16 @@ def request_cancel_view(request, pk):
 
     return redirect('request_detail', pk=pk)
 
+@login_required
+def request_double(request, pk):
+    original = get_object_or_404(Request, pk=pk)
+
+    original.pk = None 
+    original.id = None           
+    original._state.adding = True 
+    original.save()
+
+    return redirect('request_update', pk=original.pk)
 
 # ———————— Ошибки ————————
 def custom_400(request, exception=None):
