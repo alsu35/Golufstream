@@ -27,14 +27,13 @@
         }
 
         .form-container {
-            max-width: 1200px;
-            margin: 4rem auto;
+            max-width: 100%;
+            margin: 0 auto;
             background-color: white;
             padding: 2.5rem;
             border-radius: 16px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
         }
-
         .form-title {
             position: relative;
             display: inline-block;
@@ -65,6 +64,8 @@
         input#id_work_object,
         input#id_work_type,
         input.form-control,
+        input#id_date_start,
+        input#id_date_end,
         input#id_time_start,
         input#id_time_end,
         input#id_transport_type,
@@ -248,6 +249,7 @@
         .form-check-label {
             margin-top: 4px;
         }
+        
     </style>
 </head>
 
@@ -327,25 +329,26 @@
                 <h6>Период работ</h6>
                 <div class="row g-3">
                     <!-- Дата начала -->
-                    <div class="col-md-6">
-                        <label for="{{ form.date_start.id_for_label }}" class="form-label">Дата начала<span
-                                class="star">*</span></label>
-                        {{ form.date_start }}
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.date_start.id_for_label }}" class="form-label">Дата начала<span class="star">*</span></label>
+                        <div class="input-group">
+                            {{ form.date_start }}
+                        </div>
                         {% if form.date_start.errors %}
                         <div class="invalid-feedback d-block">{{ form.date_start.errors.as_text }}</div>
                         {% endif %}
                     </div>
 
                     <!-- Дата окончания -->
-                    <div class="col-md-6">
-                        <label for="{{ form.date_end.id_for_label }}" class="form-label">Дата окончания<span
-                                class="star">*</span></label>
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.date_end.id_for_label }}" class="form-label">
+                            Дата окончания<span class="star">*</span>
+                        </label>
                         {{ form.date_end }}
                         {% if form.date_end.errors %}
-                        <div class="invalid-feedback d-block">{{ form.date_end.errors.as_text }}</div>
+                            <div class="invalid-feedback d-block">{{ form.date_end.errors.as_text }}</div>
                         {% endif %}
                     </div>
-
                     <!-- Время начала -->
                     <div class="col-md-6">
                         <label for="{{ form.time_start.id_for_label }}" class="form-label">Время начала<span
@@ -366,20 +369,34 @@
                     </div>
 
                     <!-- Перерывы -->
-                    <div class="col-md-6">
+                    <div class="col-md-6 mb-3">
                         <label for="{{ form.break_periods.id_for_label }}" class="form-label">
                             {{ form.break_periods.label }}
                         </label>
+
+                        <!-- Контейнер для динамических полей перерывов -->
+                        <div id="break-periods-container" class="mb-2">
+                            <!-- JS будет вставлять сюда строки с input[type="time"] -->
+                        </div>
+
+                        <!-- Кнопка добавления -->
+                        <button type="button" class="btn btn-sm btn-outline-primary" id="add-break-btn">+ Добавить
+                            перерыв</button>
+
+                        <!-- Скрытое поле с JSON -->
                         {{ form.break_periods }}
+
                         {% if form.break_periods.help_text %}
                         <small class="form-text text-muted">{{ form.break_periods.help_text }}</small>
                         {% endif %}
+
                         {% if form.break_periods.errors %}
                         <div class="invalid-feedback d-block">
                             {{ form.break_periods.errors.as_text }}
                         </div>
                         {% endif %}
                     </div>
+
                     <!-- По факту -->
                     <div class="col-md-6">
                         <div class="mt-4 custom_fact_checkbox">
@@ -430,7 +447,7 @@
             </div>
 
             <!-- Подъемные сооружения -->
-            <div class="form-section lifting-fields" id="liftingFields">
+            <div class="form-section lifting-fields" id="liftingFields" style="display: none;">
                 <h6>Дополнительная информация для подъемных сооружений</h6>
                 <div class="row g-3">
                     <!-- Номер удостоверения ответственного -->
@@ -493,17 +510,80 @@
     <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ru.js"></script>
 
     <script>
-        $(document).ready(function () {
-            // Инициализация Select2
-            $('#{{ form.responsible.auto_id }}').select2({
+        let breakCounter = 0;
+
+        function addBreakPeriod(start = '', end = '') {
+            const container = document.getElementById('break-periods-container');
+
+            const row = document.createElement('div');
+            row.classList.add('row', 'g-2', 'align-items-center', 'mb-1');
+            row.dataset.index = breakCounter;
+
+            row.innerHTML = `
+                <div class="col-5">
+                    <input type="time" class="form-control break-start" value="${start}">
+                </div>
+                <div class="col-5">
+                    <input type="time" class="form-control break-end" value="${end}">
+                </div>
+                <div class="col-2">
+                    <button type="button" class="btn btn-outline-danger btn-sm remove-break-btn">Удалить</button>
+                </div>
+            `;
+
+            container.appendChild(row);
+            breakCounter++;
+        }
+
+        function initBreakPeriods() {
+            // Заполнение значениями при редактировании
+            const existing = JSON.parse(document.getElementById('break-periods-data').textContent);
+            if (Array.isArray(existing)) {
+                existing.forEach(item => addBreakPeriod(item.start, item.end));
+            }
+
+            // Обработчик добавления нового перерыва
+            document.getElementById('add-break-btn').addEventListener('click', () => {
+                addBreakPeriod();
+            });
+
+            // Удаление перерыва
+            document.getElementById('break-periods-container').addEventListener('click', function (e) {
+                if (e.target.classList.contains('remove-break-btn')) {
+                    e.target.closest('.row').remove();
+                }
+            });
+
+            // Сериализация перерывов при отправке формы
+            document.querySelector('form').addEventListener('submit', function () {
+                const breaks = [];
+
+                document.querySelectorAll('#break-periods-container .row').forEach(row => {
+                    const start = row.querySelector('.break-start').value;
+                    const end = row.querySelector('.break-end').value;
+
+                    if (start && end) {
+                        breaks.push({ start, end });
+                    }
+                });
+
+                document.getElementById('{{ form.break_periods.id_for_label }}').value = JSON.stringify(breaks);
+            });
+        }
+
+        function initSelect2() {
+            // Select2 для ответственного
+            $('#{{ form.responsible.id_for_label }}').select2({
                 theme: 'bootstrap-5',
                 placeholder: 'Выберите ответственного',
                 allowClear: true,
                 width: '100%'
             });
+        }
 
-            // Инициализация вы
-            flatpickr("#{{ form.date_start.auto_id }}", {
+        function initDatepickers() {
+            // flatpickr для дат
+            flatpickr("#{{ form.date_start.id_for_label }}", {
                 locale: "ru",
                 dateFormat: "d.m.Y",
                 altInput: true,
@@ -514,7 +594,7 @@
                 }
             });
 
-            flatpickr("#{{ form.date_end.auto_id }}", {
+            flatpickr("#{{ form.date_end.id_for_label }}", {
                 locale: "ru",
                 dateFormat: "d.m.Y",
                 altInput: true,
@@ -525,41 +605,79 @@
                 }
             });
 
-            flatpickr("#{{ form.time_start.auto_id }}", {
+            // flatpickr для времени
+            flatpickr("#{{ form.time_start.id_for_label }}", {
                 enableTime: true,
                 noCalendar: true,
                 dateFormat: "H:i",
                 time_24hr: true
             });
 
-            flatpickr("#{{ form.time_end.auto_id }}", {
+            flatpickr("#{{ form.time_end.id_for_label }}", {
                 enableTime: true,
                 noCalendar: true,
                 dateFormat: "H:i",
                 time_24hr: true
             });
+        }
 
-            // Показ/скрытие специальных полей
-            function toggleLiftingFields() {
-                const category = $('#{{ form.equipment_category.auto_id }}').val();
-                const liftingFields = $('#liftingFields');
+        function toggleLiftingFields() {
+            const category = $('#{{ form.equipment_category.id_for_label }}').val();
+            const liftingFields = $('#liftingFields');
+            const requiredStars = liftingFields.find('.star');
 
-                if (category === 'lifting') {
-                    liftingFields.slideDown();
-                } else {
-                    liftingFields.slideUp();
-                }
+            if (category === 'lifting') {
+                liftingFields.slideDown();
+                // Делаем поля обязательными
+                liftingFields.find('input, textarea').each(function() {
+                    $(this).prop('required', true);
+                });
+                requiredStars.show();
+            } else {
+                liftingFields.slideUp();
+                // Снимаем обязательность и очищаем поля
+                liftingFields.find('input, textarea').each(function() {
+                    $(this).prop('required', false).val('');
+                });
+                requiredStars.hide();
             }
+        }
 
-            // Инициальный вызов
+        function initLiftingFields() {
             toggleLiftingFields();
 
             // Обработчик изменения категории
-            $('#{{ form.equipment_category.auto_id }}').on('change', function () {
+            $('#{{ form.equipment_category.id_for_label }}').on('change', function() {
                 toggleLiftingFields();
             });
+
+            // Обработчик отправки формы - валидация для lifting
+            $('form').on('submit', function() {
+                const category = $('#{{ form.equipment_category.id_for_label }}').val();
+                if (category === 'lifting') {
+                    let isValid = true;
+                    $('#liftingFields').find('input, textarea').each(function() {
+                        if (!$(this).val()) {
+                            $(this).addClass('is-invalid');
+                            isValid = false;
+                        } else {
+                            $(this).removeClass('is-invalid');
+                        }
+                    });
+                    return isValid;
+                }
+                return true;
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            initBreakPeriods();
+            initSelect2();
+            initDatepickers();
+            initLiftingFields();
         });
     </script>
+
 </body>
 
 </html>

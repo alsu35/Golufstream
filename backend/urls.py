@@ -20,6 +20,7 @@ from core.views import (
     custom_400,
 )
 
+
 urlpatterns = [
     path('', redirect_after_login_view, name='index'),
     path('admin/', admin.site.urls),
@@ -35,8 +36,9 @@ urlpatterns = [
     path('requests/<int:pk>/edit/', request_update_view, name='request_update'),
     path('requests/<int:pk>/cancel/', request_cancel_view, name='request_cancel'),
 
-    path("requests/update-status/", update_status, name="update_status"),
-    path("requests/update-responsible/", update_responsible, name="update_responsible"),
+    path('api/update_status/', update_status, name='update_status'),
+    path('api/update_responsible/', update_responsible, name='update_responsible'),
+
 ]
 
 # Обработчики ошибок

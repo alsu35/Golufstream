@@ -4,6 +4,7 @@
 <head>
     <meta charset="UTF-8" />
     <title>Список заявок</title>
+    <meta name="csrf-token" content="{{ csrf_token }}">
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
     {% load static %}
@@ -11,9 +12,27 @@
     <link rel="shortcut icon" href="{% static 'img/favicon.ico' %}" type="image/x-icon" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
 
+    <!-- Bootstrap CSS уже должен быть подключён -->
+    <link
+    href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css"
+    rel="stylesheet"
+    />
+    <link
+    href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.4.0/dist/select2-bootstrap-5-theme.min.css"
+    rel="stylesheet"
+    />
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script
+    src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.full.min.js"
+    ></script>
+
+
     <!-- Flatpickr CSS -->
     <link href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" rel="stylesheet" />
-
+    <!-- в <head> -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <!-- перед </body> -->
     <style>
         body {
             background-color: #f8f9fa;
@@ -211,6 +230,28 @@
             white-space: normal !important;
         }
 
+        /* Перенос длинных названий в Select2 */
+        .select2-container--bootstrap-5 .select2-selection__rendered {
+        white-space: normal;      /* переход на новую строку */
+        line-height: 1.2;         /* чуть компактнее */
+        }
+
+        /* Скрываем крестик очистки */
+        .select2-container--bootstrap-5 .select2-selection__clear {
+        display: none !important;
+        }
+
+        /* Стили для каждой опции: ФИО + должность */
+        .select2-container--bootstrap-5 .select2-results__option .option-title {
+        display: block;
+        font-weight: 600;
+        }
+        .select2-container--bootstrap-5 .select2-results__option .option-sub {
+        display: block;
+        font-size: 0.85em;
+        color: #6c757d;
+        }
+
         @media (max-width: 768px) {
             .search-filter-dates {
                 justify-content: flex-start;
@@ -277,7 +318,7 @@
     </style>
 </head>
 
-<body>
+<body type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
     <div class="container py-3">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h2>Список заявок</h2>
@@ -354,6 +395,7 @@
 
         </div>
 
+
         <!-- Таблица заявок -->
         <div class="table-container">
             <table id="requestsTable" class="table table-striped table-hover align-middle">
@@ -379,16 +421,23 @@
                 </thead>
                 <tbody>
                     {% for req in requests %}
-                    <tr data-id="{{ req.id }}" data-status="{{ req.status.code }}"
-                        data-location="{{ req.location.code }}"
-                        data-equipment-category="{{ req.equipment_category.code }}"
-                        data-customer="{{ req.customer.full_name|lower }}"
-                        data-responsible="{{ req.responsible.full_name|default:''|lower }}"
-                        data-work-type="{{ req.work_type|lower }}" data-work-object="{{ req.work_object|lower }}"
-                        data-transport-type="{{ req.transport_type|lower }}"
-                        data-department="{{ req.customer.department.name|lower }}"
-                        data-date-start="{{ req.date_start|date:'Y-m-d' }}"
-                        data-date-end="{{ req.date_end|date:'Y-m-d' }}">
+                        <!-- templates/requests/request_list.html -->
+                        <tr 
+                            data-id="{{ req.id }}"
+                            data-status="{{ req.status.code }}"
+                            data-status-id="{{ req.status.id }}"
+                            data-status-name="{{ req.status.name }}"
+                            data-location="{{ req.location.code }}"
+                            data-equipment-category="{{ req.equipment_category.code }}"
+                            data-customer="{{ req.customer.full_name|lower }}"
+                            data-responsible="{% if req.responsible %}{{ req.responsible.full_name|lower }}{% endif %}"
+                            data-work-type="{{ req.work_type|lower }}"
+                            data-work-object="{{ req.work_object|lower }}"
+                            data-transport-type="{{ req.transport_type|lower }}"
+                            data-department="{{ req.customer.department.name|lower }}"
+                            data-date-start="{{ req.date_start|date:'Y-m-d' }}"
+                            data-date-end="{{ req.date_end|date:'Y-m-d' }}"
+                        >
                         <!-- Действия, ID и Дата подачи -->
                         <td class="actions" style="left: 0; z-index: 1">
                             <a href="{% url 'request_detail' req.pk %}"
@@ -437,100 +486,53 @@
                         <!-- Объект работ -->
                         <td>{{ req.work_object }}</td>
 
-                        <!-- Статус: статично или выпадающий список для оператора -->
+                        <!-- Статус -->
                         <td>
                             {% if profile.role.code == 'operator' %}
-                            <a href="#" class="edit-status" data-bs-toggle="modal" data-bs-target="#statusModal"
-                                data-id="{{ req.id }}" data-current="{{ req.status.id }}">
-                                {{ req.status.name }}
-                            </a>
+                                <select class="form-select form-select-sm change-status" data-id="{{ req.id }}">
+                                    {% for s in statuses %}
+                                        <option value="{{ s.id }}" {% if s.id == req.status.id %}selected{% endif %}>
+                                            {{ s.name }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
                             {% else %}
-                            <span class="status-badge status-{{ req.status.code }}">{{ req.status.name }}</span>
+                                <span class="status-badge status-{{ req.status.code }}">{{ req.status.name }}</span>
                             {% endif %}
                         </td>
-                        <!-- Модалка статуса -->
-                        <div class="modal fade" id="statusModal" tabindex="-1" aria-hidden="true">
-                            <div class="modal-dialog">
-                                <form id="statusForm">
-                                    <div class="modal-content">
-                                        <div class="modal-header">
-                                            <h5 class="modal-title">Изменить статус</h5>
-                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                        </div>
-                                        <div class="modal-body">
-                                            <input type="hidden" name="request_id" id="statusRequestId">
-                                            <select class="form-select" name="status" id="statusSelect">
-                                                {% for st in statuses %}
-                                                <option value="{{ st.id }}" data-code="{{ st.code }}">
-                                                    {{ st.name }}
-                                                </option>
-                                                {% endfor %}
-                                            </select>
-                                        </div>
-                                        <div class="modal-footer">
-                                            <button type="submit" class="btn btn-primary">Сохранить</button>
-                                            <button type="button" class="btn btn-secondary"
-                                                data-bs-dismiss="modal">Закрыть</button>
-                                        </div>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
 
                         <!-- Заказчик и Подразделение -->
                         <td>{{ req.customer.full_name }}</td>
                         <td>{{ req.customer.department.name }}</td>
 
-                        <!-- Ответственный: статично или выпадающий список для оператора -->
+                        <!-- Ответственный -->
                         <td>
-                            {% if profile.role.code == 'operator' %}
-                            <a href="#" class="edit-responsible" data-bs-toggle="modal"
-                                data-bs-target="#responsibleModal" data-id="{{ req.id }}"
-                                data-current="{{ req.responsible.id|default:'' }}">
-                                {% if req.responsible %}
-                                {{ req.responsible.full_name }} — {{ req.responsible.position }}
-                                {% else %}
-                                —
-                                {% endif %}
-                            </a>
-                            {% else %}
+                        {% if profile.role.code == 'operator' %}
+                            <select
+                            class="form-select form-select-sm change-responsible"
+                            data-id="{{ req.id }}"
+                            style="width: 200px;" 
+                            >
+                            <option value="">—</option>
+                            {% for u in responsibles %}
+                                <option value="{{ u.id }}"
+                                {% if req.responsible and u.id == req.responsible.id %}selected{% endif %}
+                                data-position="{{ u.position }}"
+                                >
+                                {{ u.full_name }}
+                                </option>
+                            {% endfor %}
+                            </select>
+                        {% else %}
                             {% if req.responsible %}
                             {{ req.responsible.full_name }} — {{ req.responsible.position }}
                             {% else %}
                             —
                             {% endif %}
-                            {% endif %}
+                        {% endif %}
                         </td>
-                        <!-- Модалка ответственного -->
-                        <div class="modal fade" id="responsibleModal" tabindex="-1" aria-hidden="true">
-                            <div class="modal-dialog">
-                                <form id="responsibleForm">
-                                    <div class="modal-content">
-                                        <div class="modal-header">
-                                            <h5 class="modal-title">Изменить ответственного</h5>
-                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                        </div>
-                                        <div class="modal-body">
-                                            <input type="hidden" name="request_id" id="responsibleRequestId">
-                                            <select class="form-select" name="responsible" id="responsibleSelect">
-                                                <option value="">—</option>
-                                                {% for p in responsibles %}
-                                                <option value="{{ p.id }}" data-position="{{ p.position }}"
-                                                    data-department="{{ p.department.name }}">
-                                                    {{ p.full_name }} — {{ p.position }}
-                                                </option>
-                                                {% endfor %}
-                                            </select>
-                                        </div>
-                                        <div class="modal-footer">
-                                            <button type="submit" class="btn btn-primary">Сохранить</button>
-                                            <button type="button" class="btn btn-secondary"
-                                                data-bs-dismiss="modal">Закрыть</button>
-                                        </div>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
+
+                    </div>
 
 
                         <!-- Перерывы -->
@@ -562,240 +564,178 @@
             </table>
         </div>
     </div>
-
     <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap @5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <!-- jQuery -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js "></script>
     <!-- Select2 JS -->
-    <script src="https://cdn.jsdelivr.net/npm/select2 @4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <!-- Flatpickr JS -->
     <script src="https://cdn.jsdelivr.net/npm/flatpickr "></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ru.js "></script>
 
-    <!-- JS для фильтрации -->
+    
+    <!-- JS для фильтрации и inline-редактирования -->
     <script>
-        $(document).ready(function () {
-            // Инициализация календаря
-            const dateStartPicker = flatpickr("#dateStartFilter", {
-                locale: "ru",
-                dateFormat: "Y-m-d",
-                altFormat: "d.m.Y",
-                altInput: true,
-                allowInput: true,
-                onChange: function (selectedDates, dateStr, instance) {
-                    filterRequests();
-                }
-            });
-
-            const dateEndPicker = flatpickr("#dateEndFilter", {
-                locale: "ru",
-                dateFormat: "Y-m-d",
-                altFormat: "d.m.Y",
-                altInput: true,
-                allowInput: true,
-                onChange: function (selectedDates, dateStr, instance) {
-                    filterRequests();
-                }
-            });
-
-            // Очистка дат
-            document.getElementById("clearDateFilter").addEventListener("click", function () {
-                dateStartPicker.clear();
-                dateEndPicker.clear();
-                filterRequests();
-            });
-
-            // Сортировка по дате подачи
-            let sortDirection = "desc";
-            document.getElementById("sortDateHeader").addEventListener("click", function () {
-                const tbody = document.querySelector("#requestsTable tbody");
-                const rows = Array.from(tbody.querySelectorAll("tr"));
-
-                // Обновляем направление сортировки
-                sortDirection = sortDirection === "asc" ? "desc" : "asc";
-
-                // Сортируем
-                rows.sort((a, b) => {
-                    const dateA = a.getAttribute("created-at");
-                    const dateB = b.getAttribute("created-at");
-                    return sortDirection === "asc"
-                        ? dateA.localeCompare(dateB)
-                        : dateB.localeCompare(dateA);
-                });
-
-                // Перерисовываем таблицу
-                rows.forEach(row => tbody.appendChild(row));
-            });
-
-            // Фильтрация по тексту и полям
-            function filterRequests() {
-                const searchInput = document.getElementById("searchInput").value.trim().toLowerCase();
-                const statusFilter = document.getElementById("statusFilter").value;
-                const locationFilter = document.getElementById("locationFilter")?.value;  // ← Может быть undefined
-                const categoryFilter = document.getElementById("categoryFilter").value;
-                const dateStartFilter = document.getElementById("dateStartFilter").value;
-                const dateEndFilter = document.getElementById("dateEndFilter").value;
-
-                const rows = document.querySelectorAll("#requestsTable tbody tr");
-
-                rows.forEach(row => {
-                    // Получаем данные из атрибутов
-                    const createdAt = row.getAttribute("created-at");
-                    const status = row.getAttribute("data-status");
-                    const location = row.getAttribute("data-location");
-                    const equipmentCategory = row.getAttribute("data-equipment-category");
-                    const customer = row.getAttribute("data-customer") || "";
-                    const responsible = row.getAttribute("data-responsible") || "";
-                    const workType = row.getAttribute("data-work-type") || "";
-                    const department = row.getAttribute("data-department") || "";
-                    const rowDateStart = row.getAttribute("data-date-start");
-                    const rowDateEnd = row.getAttribute("data-date-end");
-
-                    // Поиск по тексту
-                    const searchMatch = !searchInput ||
-                        customer.includes(searchInput) ||
-                        responsible.includes(searchInput) ||
-                        workType.includes(searchInput) ||
-                        department.includes(searchInput);
-
-                    // Фильтр по статусу
-                    const statusMatch = !statusFilter || status === statusFilter;
-
-                    // Фильтр по локации
-                    const locationMatch = !locationFilter || location === locationFilter;
-
-                    // Фильтр по категории
-                    const categoryMatch = !categoryFilter || equipmentCategory === categoryFilter;
-
-                    // Фильтр по дате
-                    let dateMatch = true;
-                    if (dateStartFilter || dateEndFilter) {
-                        if (rowDateStart && rowDateEnd) {
-                            dateMatch =
-                                (!dateStartFilter || rowDateStart >= dateStartFilter) &&
-                                (!dateEndFilter || rowDateEnd <= dateEndFilter);
-                        } else {
-                            dateMatch = false;
-                        }
-                    }
-
-                    // Применяем фильтры
-                    if (searchMatch && statusMatch && locationMatch && categoryMatch && dateMatch) {
-                        row.style.display = "";
-                    } else {
-                        row.style.display = "none";
-                    }
-                });
-            }
-
-            // работа модулей
-            $(document).ready(function () {
-                // Инициализация Select2
-                $('#statusSelect').select2({
-                    theme: 'bootstrap-5',
-                    placeholder: 'Выберите статус',
-                    allowClear: true,
-                    width: '100%'
-                });
-
-                $('#responsibleSelect').select2({
-                    theme: 'bootstrap-5',
-                    placeholder: 'Выберите ответственного',
-                    allowClear: true,
-                    width: '100%',
-                    templateResult: formatResponsibleOption,
-                    templateSelection: formatResponsibleOption
-                });
-
-                function formatResponsibleOption(profile) {
-                    if (!profile.id) return profile.text;
-                    return $(`
-            <div class="d-flex flex-column">
-                <span>${profile.text}</span>
-                <small class="text-muted">Должность: ${profile.element.dataset.position}</small>
-                <small class="text-muted">Подразделение: ${profile.element.dataset.department}</small>
-            </div>
-        `);
-                }
-
-                // Обработчики открытия модалок
-                $('.edit-status').on('click', function () {
-                    $('#statusRequestId').val($(this).data('id'));
-                    $('#statusSelect').val($(this).data('current')).trigger('change');
-                });
-
-                $('.edit-responsible').on('click', function () {
-                    $('#responsibleRequestId').val($(this).data('id'));
-                    $('#responsibleSelect').val($(this).data('current')).trigger('change');
-                });
-
-                // Обработчик формы статуса
-                $('#statusForm').on('submit', function (e) {
-                    e.preventDefault();
-                    const formData = new FormData(this);
-
-                    fetch("{% url 'update_status' %}", {
-                        method: "POST",
-                        headers: {
-                            "X-CSRFToken": "{{ csrf_token }}",
-                            "Content-Type": "application/json"
-                        },
-                        body: JSON.stringify({
-                            request_id: this.request_id.value,
-                            status_id: this.status.value
-                        })
-                    }).then(resp => resp.json())
-                        .then(data => {
-                            if (data.success) {
-                                // Обновляем статус в таблице
-                                $(`#requestsTable tr[data-id='${data.request_id}'] .edit-status`)
-                                    .data('current', data.status_id)
-                                    .text(data.status_name);
-                                $('#statusModal').modal('hide');
-                            } else {
-                                alert(data.error);
-                            }
-                        });
-                });
-
-                // Обработчик формы ответственного
-                $('#responsibleForm').on('submit', function (e) {
-                    e.preventDefault();
-                    const formData = new FormData(this);
-
-                    fetch("{% url 'update_responsible' %}", {
-                        method: "POST",
-                        headers: {
-                            "X-CSRFToken": "{{ csrf_token }}",
-                            "Content-Type": "application/json"
-                        },
-                        body: JSON.stringify({
-                            request_id: this.request_id.value,
-                            responsible_id: this.responsible.value
-                        })
-                    }).then(resp => resp.json())
-                        .then(data => {
-                            if (data.success) {
-                                // Обновляем ответственного в таблице
-                                $(`#requestsTable tr[data-id='${data.request_id}'] .edit-responsible`)
-                                    .data('current', data.responsible_id)
-                                    .text(data.responsible_name || '—');
-                                $('#responsibleModal').modal('hide');
-                            } else {
-                                alert(data.error);
-                            }
-                        });
-                });
-            });
-
-            // Обработчики событий
-            document.getElementById("searchInput").addEventListener("input", filterRequests);
-            document.getElementById("statusFilter").addEventListener("change", filterRequests);
-            document.getElementById("locationFilter")?.addEventListener("change", filterRequests);  // ← Условная проверка
-            document.getElementById("categoryFilter").addEventListener("change", filterRequests);
+    $(document).ready(function () {
+        // 1) Календарь
+        const dateStartPicker = flatpickr("#dateStartFilter", {
+            locale: "ru",
+            dateFormat: "Y-m-d",
+            altFormat:   "d.m.Y",
+            altInput:    true,
+            allowInput:  true,
+            onChange:    filterRequests
         });
+        const dateEndPicker = flatpickr("#dateEndFilter", {
+            locale: "ru",
+            dateFormat: "Y-m-d",
+            altFormat:   "d.m.Y",
+            altInput:    true,
+            allowInput:  true,
+            onChange:    filterRequests
+        });
+
+        // 2) Очистка
+        $("#clearDateFilter").on("click", function () {
+            dateStartPicker.clear();
+            dateEndPicker.clear();
+            filterRequests();
+        });
+
+        // 3) Сортировка по дате
+        let sortDirection = "desc";
+        $("#sortDateHeader").on("click", function () {
+            const tbody = $("#requestsTable tbody");
+            const rows  = tbody.find("tr").get();
+            sortDirection = sortDirection === "asc" ? "desc" : "asc";
+            rows.sort((a,b) => {
+                const aDate = a.getAttribute("created-at"),
+                    bDate = b.getAttribute("created-at");
+                return sortDirection === "asc"
+                    ? aDate.localeCompare(bDate)
+                    : bDate.localeCompare(aDate);
+            });
+            $.each(rows, (_, row) => tbody.append(row));
+        });
+
+        // 4) Функция фильтрации
+        function filterRequests() {
+            const searchValue   = $("#searchInput").val().trim().toLowerCase();
+            const statusFilter  = $("#statusFilter").val();
+            const locationFilter= $("#locationFilter").val();
+            const categoryFilter= $("#categoryFilter").val();
+            const dateStart     = $("#dateStartFilter").val();
+            const dateEnd       = $("#dateEndFilter").val();
+
+            $("#requestsTable tbody tr").each(function() {
+                const row    = $(this),
+                    reqId = (row.data("id")+""),
+                    status= row.data("status"),
+                    loc   = row.data("location"),
+                    cat   = row.data("equipment-category"),
+                    cust  = (row.data("customer")||""),
+                    resp  = (row.data("responsible")||""),
+                    wt    = (row.data("work-type")||""),
+                    wo    = (row.data("work-object")||""),
+                    trt   = (row.data("transport-type")||""),
+                    dept  = (row.data("department")||""),
+                    rs    = row.data("date-start"),
+                    re    = row.data("date-end");
+
+                const textMatch = !searchValue
+                    || reqId.includes(searchValue)
+                    || wt.toLowerCase().includes(searchValue)
+                    || wo.toLowerCase().includes(searchValue)
+                    || trt.toLowerCase().includes(searchValue)
+                    || cust.includes(searchValue)
+                    || resp.includes(searchValue)
+                    || dept.includes(searchValue);
+
+                const statusMatch   = !statusFilter   || status   === statusFilter;
+                const locationMatch = !locationFilter || loc      === locationFilter;
+                const categoryMatch = !categoryFilter || cat      === categoryFilter;
+
+                let dateMatch = true;
+                if (dateStart || dateEnd) {
+                    dateMatch = !!rs && !!re
+                        && (!dateStart || rs >= dateStart)
+                        && (!dateEnd   || re <= dateEnd);
+                }
+
+                textMatch && statusMatch && locationMatch && categoryMatch && dateMatch
+                    ? row.show()
+                    : row.hide();
+            });
+        }
+
+        // 5) События фильтрации
+        $("#searchInput").on("input", filterRequests);
+        $("#statusFilter, #locationFilter, #categoryFilter").on("change", filterRequests);
+
+        // 6) Inline‑статус → AJAX
+        $(".change-status").on("change", function () {
+            const id = $(this).data("id"),
+                st = $(this).val();
+            fetch("{% url 'update_status' %}", {
+                method: "POST",
+                headers: {
+                    "X-CSRFToken": document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ request_id: id, status_id: st })
+            })
+            .then(r => r.json())
+            .then(js => {
+                if (!js.success) alert("Ошибка: " + js.error);
+            });
+        });
+
+        // 7) Inline‑ответственный → Select2 + AJAX
+        function formatResponsible(option) {
+            if (!option.id) return option.text;
+            const title    = option.text,
+                position = $(option.element).data('position') || '';
+            return $(`
+                <div>
+                    <span class="option-title">${title}</span>
+                    <span class="option-sub">${position}</span>
+                </div>
+            `);
+        }
+
+        $('.change-responsible').select2({
+            theme: 'bootstrap-5',
+            placeholder: 'Выберите ответственного',
+            allowClear: false,
+            width:     'resolve',
+            templateResult: formatResponsible,
+            templateSelection: formatResponsible,
+            escapeMarkup: m => m
+        }).on("change", function(){
+            const requestId = $(this).data("id"),
+                profId    = $(this).val();
+            fetch("{% url 'update_responsible' %}", {
+                method: "POST",
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    request_id: requestId,
+                    responsible_id: profId
+                })
+            })
+            .then(r => r.json())
+            .then(js => {
+                if (!js.success) alert('Ошибка: ' + js.error);
+            });
+        });
+
+    });  // конец $(document).ready
     </script>
+
+
 </body>
 
 </html>

@@ -1,5 +1,5 @@
 import json
-from django.http import JsonResponse
+from django.http import Http404, HttpResponseBadRequest, JsonResponse
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
@@ -8,10 +8,10 @@ from django.contrib import messages
 from django.urls import reverse
 from django.core.cache import cache
 from django.contrib.auth import logout, authenticate, login
+from django.db import transaction
 
 from .models import Request, Status, OrganizationLocation, Category, Profile
 from .forms import RequestForm, LoginForm
-
 
 # ———————— Helpers ————————
 def _get_cached(key, queryset_fn, timeout=60*15):
@@ -75,9 +75,30 @@ def redirect_after_login_view(request):
 
 
 # ———————— CRUD для Request ————————
+import json
+
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import render
-from .models import Request, Status, Category, OrganizationLocation, Profile
+from django.db import transaction
+from django.http import (
+    JsonResponse,
+    HttpResponseBadRequest,
+    HttpResponseForbidden,
+)
+from django.shortcuts import get_object_or_404, render
+from django.views.decorators.http import require_POST
+
+from core.models import (
+    Request,
+    Profile,
+    Status,
+    OrganizationLocation,
+    Category,
+)
+from django.utils.decorators import decorator_from_middleware
+from django.middleware.csrf import CsrfViewMiddleware
+
+csrfmiddlewareexempt = decorator_from_middleware(CsrfViewMiddleware)
+
 
 @login_required
 def request_list_view(request):
@@ -89,16 +110,13 @@ def request_list_view(request):
         'status',
         'location',
         'equipment_category',
-        'customer__department',
         'customer__department__organization',
-        'responsible'
+        'responsible',
     )
 
-    # Если есть профиль и указана локация — фильтруем по ней
     if profile and profile.location:
         qs = qs.filter(location=profile.location)
 
-    # Если роль оператор — собираем ответственных из той же локации
     responsibles = None
     if profile and profile.role.code == 'operator' and profile.location:
         responsibles = Profile.objects.filter(location=profile.location)
@@ -112,66 +130,43 @@ def request_list_view(request):
         'responsibles': responsibles,
     })
 
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
+import json
 
+from .models import Request, Status, User
+
+@csrf_exempt
 @require_POST
-@login_required
 def update_status(request):
-    data = json.loads(request.body)
-    profile = getattr(request.user, 'profile', None)
-
-    if not profile or profile.role.code != 'operator':
-        return JsonResponse({'success': False, 'error': 'Нет прав'}, status=403)
-
     try:
-        req = Request.objects.get(id=data['request_id'])
-        if req.location != profile.location:
-            return JsonResponse({
-                'success': False, 
-                'error': 'Вы можете редактировать только заявки своей локации'
-            }, status=403)
-        
-        req.status = Status.objects.get(id=data['status_id'])
-        req.save()
-        
-        return JsonResponse({
-            'success': True,
-            'request_id': req.id,
-            'status_id': req.status.id,
-            'status_name': req.status.name
-        })
+        data = json.loads(request.body)
+        request_id = data.get('request_id')
+        status_id = data.get('status_id')
+
+        req = Request.objects.get(id=request_id)
+        status = Status.objects.get(id=status_id)
+
+        req.status = status
+        req.save(update_fields=['status'])
+
+        return JsonResponse({'success': True})
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
-    
+
+
+@csrf_exempt
 @require_POST
-@login_required
 def update_responsible(request):
-    data = json.loads(request.body)
-    profile = getattr(request.user, 'profile', None)
-
-    if not profile or profile.role.code != 'operator':
-        return JsonResponse({'success': False, 'error': 'Нет прав'}, status=403)
-
     try:
+        data = json.loads(request.body)
         req = Request.objects.get(id=data['request_id'])
-        if req.location != profile.location:
-            return JsonResponse({
-                'success': False, 
-                'error': 'Вы можете редактировать только заявки своей локации'
-            }, status=403)
-        
-        if data.get('responsible_id'):
-            req.responsible = Profile.objects.get(id=data['responsible_id'])
-        else:
-            req.responsible = None
-        
-        req.save()
-        
-        return JsonResponse({
-            'success': True,
-            'request_id': req.id,
-            'responsible_id': req.responsible.id if req.responsible else None,
-            'responsible_name': req.responsible.full_name if req.responsible else '—'
-        })
+        # теперь profile_id, а не user_id
+        prof = Profile.objects.get(id=data['responsible_id'])
+        req.responsible = prof
+        req.save(update_fields=['responsible'])
+        return JsonResponse({'success': True})
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
 
@@ -210,7 +205,6 @@ def request_detail_view(request, pk):
 
     return HttpResponseForbidden("Нет прав на просмотр заявки")
 
-
 @login_required
 def request_create_view(request):
     user = request.user
@@ -225,21 +219,37 @@ def request_create_view(request):
             req = form.save(commit=False)
             if not profile:
                 return HttpResponseForbidden("Профиль не найден")
+            
             req.customer = profile
             req.location = profile.location
+            
+            # Очищаем поля для подъемных сооружений, если категория не "lifting"
+            if req.equipment_category.code != 'lifting':
+                req.responsible_certificate = None
+                req.rigger_name = None
+                req.rigger_certificates = None
+            
             try:
                 req.status = Status.objects.get(code='new')
             except Status.DoesNotExist:
                 return HttpResponseServerError("Статус 'new' не найден")
+            
             req.save()
             return redirect('request_list')
     else:
-        form = RequestForm()
+        initial_data = {}
         if profile:
-            form.fields['location'].initial = profile.location_id
+            initial_data['location'] = profile.location_id
+        
+        form = RequestForm(initial=initial_data)
+        
+        if profile:
             form.fields['location'].widget.attrs['readonly'] = True
 
-    return render(request, 'requests/request_form.html', {'form': form})
+    return render(request, 'requests/request_form.html', {
+        'form': form,
+        'show_lifting_fields': False 
+    })
 
 
 @login_required
