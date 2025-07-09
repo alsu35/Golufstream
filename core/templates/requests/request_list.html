@@ -625,8 +625,8 @@
                             {% if profile and profile.role.code in 'operator,customer' %}
                                 <!-- Дублировать -->
                                 <a href="{% url 'request_double' req.id %}" class="btn btn-sm btn-double me-1 btn-responsive d-flex align-items-center gap-1">
-                                <i class="bi bi-files"></i>
-                                <span class="text">Дублировать</span>
+                                    <i class="bi bi-files"></i>
+                                    <span class="text">Дублировать</span>
                                 </a>
                             {% endif %}
                             </td>
@@ -653,7 +653,6 @@
                                 </span>
                             </div>
                         </td>
-
 
                         <!-- Вид транспорта -->
                         <td>{{ req.transport_type }}</td>

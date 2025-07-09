@@ -1,5 +1,5 @@
 from django import forms
-from .models import Request, Status
+from .models import Category, Request, Status
 
 
 class RequestForm(forms.ModelForm):
@@ -58,8 +58,14 @@ class RequestForm(forms.ModelForm):
             }
         }
         widgets = {
-            'date_start': forms.DateInput(attrs={'type': 'date'}),
-            'date_end': forms.DateInput(attrs={'type': 'date'}),
+            'date_start': forms.DateInput(
+                attrs={'type': 'date'},
+                format='%Y-%m-%d'
+            ),
+            'date_end': forms.DateInput(
+                attrs={'type': 'date'},
+                format='%Y-%m-%d'
+            ),
             'time_start': forms.TimeInput(attrs={'type': 'time'}),
             'time_end': forms.TimeInput(attrs={'type': 'time'}),
             'comment': forms.Textarea(attrs={'rows': 3}),
@@ -83,17 +89,17 @@ class RequestForm(forms.ModelForm):
         code = None
         if self.instance and self.instance.equipment_category:
             code = self.instance.equipment_category.code
-        else:
-            code = self.data.get('equipment_category')
+        elif 'equipment_category' in self.data:
+            try:
+                category_id = int(self.data['equipment_category'])
+                category = Category.objects.get(id=category_id)
+                code = category.code
+            except (ValueError, Category.DoesNotExist):
+                code = None
 
-        if code == 'lifting':
-            for f in ('responsible_certificate', 'rigger_name', 'rigger_certificates'):
-                self.fields[f].required = True
-                self.fields[f].widget.attrs.update({'class': 'form-control is-invalid'})
-        else:
-            for f in ('responsible_certificate', 'rigger_name', 'rigger_certificates'):
-                self.fields[f].required = False
-                self.fields[f].widget.attrs.pop('class', None)
+        # Устанавливаем обязательность полей
+        for field in ['responsible_certificate', 'rigger_name', 'rigger_certificates']:
+            self.fields[field].required = (code == 'lifting')
 
     def clean(self):
         cleaned = super().clean()

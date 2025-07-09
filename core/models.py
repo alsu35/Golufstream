@@ -311,18 +311,24 @@ class Request(models.Model):
                 if dt_end <= dt_start:
                     errors['time_end'] = 'Дата и время окончания должны быть после начала'
 
-            # Проверка для подъемных сооружений
-            if self.equipment_category.code == 'lifting':
+            code = None
+            if self.equipment_category:
+                code = self.equipment_category.code
+
+            if code == 'lifting':
+                # Эти поля обязательны
                 if not self.responsible_certificate:
-                    errors['responsible_certificate'] = 'Для подъёмных сооружений обязательен номер удостоверения ответственного'
+                    self.add_error('responsible_certificate', 'Это поле обязательно для заполнения.')
                 if not self.rigger_name:
-                    errors['rigger_name'] = 'Для подъёмных сооружений укажите ФИО стропальщиков через запятую'
+                    self.add_error('rigger_name', 'Это поле обязательно для заполнения.')
                 if not self.rigger_certificates:
-                    errors['rigger_certificates'] = 'Для подъёмных сооружений укажите номера удостоверений стропальщиков через запятую'
+                    self.add_error('rigger_certificates', 'Это поле обязательно для заполнения.')
             else:
+                # Категория не lifting — очищаем поля подъемных сооружений, но НЕ equipment_category
                 self.responsible_certificate = None
                 self.rigger_name = None
                 self.rigger_certificates = None
+
 
             if errors:
                 raise ValidationError(errors)

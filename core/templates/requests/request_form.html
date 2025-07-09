@@ -2,35 +2,36 @@
 <html lang="ru">
 
 <head>
-    <meta charset="UTF-8">
+    <meta charset="UTF-8" />
     <title>Создать заявку</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
 
     <!-- Bootstrap 5 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
 
     <!-- Select2 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 
     <!-- Flatpickr CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" rel="stylesheet" />
 
     <!-- Иконки -->
     {% load static %}
-    <link rel="icon" href="{% static 'img/favicon.png' %}" type="image/png">
-    <link rel="shortcut icon" href="{% static 'img/favicon.ico' %}" type="image/x-icon">
+    <link rel="icon" href="{% static 'img/favicon.png' %}" type="image/png" />
+    <link rel="shortcut icon" href="{% static 'img/favicon.ico' %}" type="image/x-icon" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
 
     <style>
         body {
             background-color: #f8f9fa;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
         }
 
         .form-container {
             max-width: 100%;
             margin: 0 auto;
             background-color: white;
-            padding: 2.5rem;
+            padding: 1rem 2.5rem;
             border-radius: 16px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
         }
@@ -40,19 +41,19 @@
             display: inline-block;
             padding-bottom: 6px;
             white-space: nowrap;
+            margin-bottom: 20px;
         }
 
         .form-title::after {
-            content: '';
+            content: "";
             position: absolute;
             bottom: 0;
             left: 0;
             width: 100%;
             height: 3px;
             transform: scaleX(1);
-            /* регулируйте значение от 0 до 1 */
             transform-origin: left center;
-            background: linear-gradient(90deg, #8E3798, #574CA1, #4DA4CB);
+            background: linear-gradient(90deg, #8e3798, #574ca1, #4da4cb);
             transition: transform 0.3s ease;
         }
 
@@ -78,7 +79,7 @@
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
             transition: all 0.3s ease;
             height: 40px;
-            min-width: 100%;
+            width: 100%;
             padding: 6px 12px;
         }
 
@@ -87,16 +88,7 @@
         }
 
         .form-control:focus {
-            border-color: #574CA1;
-            box-shadow: 0 0 0 0.2rem rgba(87, 76, 161, 0.25);
-        }
-
-        .form-check-input:checked {
-            background-color: #574CA1;
-            border-color: #574CA1;
-        }
-
-        .form-check-input:focus {
+            border-color: #574ca1;
             box-shadow: 0 0 0 0.2rem rgba(87, 76, 161, 0.25);
         }
 
@@ -108,39 +100,33 @@
 
         .back-link {
             display: inline-block;
-            margin-top: 1rem;
             text-decoration: none;
-            color: #574CA1;
+            color: #574ca1;
             font-weight: 500;
             transition: color 0.3s ease;
         }
 
         .back-link:hover {
-            color: #4DA4CB;
+            color: #4da4cb;
         }
-
         .btn-gradient {
-            background: linear-gradient(135deg, #8E3798, #574CA1, #4DA4CB);
-            color: white;
-            border: none;
-            font-weight: 600;
-            padding: 0.75rem 1.5rem;
-            border-radius: 50px;
-            transition: all 0.3s ease;
+            background: transparent;
+            color: #574ca1;
+            border: 1px solid #574ca1;
+            margin-top: 2px;
         }
 
         .btn-gradient:hover {
             opacity: 0.9;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(87, 76, 161, 0.3);
+            color: white;
+            background: linear-gradient(135deg, #574ca1, #4da4cb);
         }
-
         .form-section {
             background-color: #f8f9fa;
             border-radius: 12px;
-            padding: 1.5rem;
-            margin-bottom: 1.5rem;
-            border-left: 4px solid #8E3798;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-left: 4px solid #8e3798;
         }
 
         .form-section h6 {
@@ -169,6 +155,12 @@
             display: flex;
         }
 
+                
+        .form-check-label {
+            margin-top: 0; 
+            margin-bottom: 0;
+        }
+
         .form-check-input {
             width: 20px;
             height: 20px;
@@ -177,29 +169,39 @@
             background-color: white;
             appearance: none;
             -webkit-appearance: none;
+            -moz-appearance: none;
             transition: all 0.2s ease-in-out;
             position: relative;
         }
 
         .form-check-input:checked {
-            background-color: #574CA1;
-            border-color: #574CA1;
+            background-color: #574ca1;
+            border-color: #574ca1;
         }
 
         .form-check-input:checked::after {
             content: "";
             position: absolute;
-            top: 4px;
-            left: 7px;
+            top: 2px;
+            left: 6px;
             width: 6px;
             height: 12px;
             border: solid white;
-            border-width: 0 2px 2px 0;
+            border-width: 0 3px 3px 0;
             transform: rotate(45deg);
         }
 
+        .form-check-input:focus {
+            box-shadow: 0 0 0 0.2rem rgba(87, 76, 161, 0.25);
+        }
+
+        .form-check-input:checked[type="checkbox"] {
+            background-image: none !important;
+        }
+
+
         .select2-container--default .select2-selection--single:focus {
-            border-color: #574CA1 !important;
+            border-color: #574ca1 !important;
             box-shadow: 0 0 0 0.2rem rgba(87, 76, 161, 0.25);
         }
 
@@ -247,170 +249,379 @@
             color: #dc3545;
         }
 
-        .form-check-label {
-            margin-top: 4px;
+        .responsive-cancel-btn .btn-text {
+            margin-left: 8px;
+        }
+
+        .select2-container--bootstrap-5 .select2-selection--single {
+            background-color: #fff;         
+            border: 1px solid #ced4da;    
+            border-radius: 8px;            
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            height: 40px;                    
+            padding: 6px 12px;             
+            width: 100% !important;    
+            transition: all 0.3s ease;
+        }
+
+        /* Текст и стрелка внутри селекта */
+        .select2-container--bootstrap-5 .select2-selection__rendered {
+            line-height: 1.5;               
+            color: #495057;
+        }
+
+        .select2-container--bootstrap-5 .select2-selection__arrow {
+            height: 100%;
+        }
+
+        /* При фокусе — подсветка, как у form-control:focus */
+        .select2-container--bootstrap-5 .select2-selection--single:focus,
+        .select2-container--bootstrap-5 .select2-selection--single:focus-within {
+            border-color: #574ca1;
+            box-shadow: 0 0 0 0.2rem rgba(87, 76, 161, 0.25);
+            outline: none;
+        }
+    
+        #id_break_periods { display: none !important; }
+        .break-row { 
+            display: flex; 
+            align-items: center; 
+            gap: .5rem; 
+            margin-bottom: .5rem; }
+        .break-label { 
+            font-size: .9rem; }
+        .btn-remove-break { 
+            background: none; 
+            border: none; 
+            color: #dc3545; 
+            font-size: 1.2rem; 
+            line-height:1; }
+
+        @media (max-width: 700px) {
+            .responsive-cancel-btn .btn-text {
+                display: none;
+            }
+
+            .responsive-cancel-btn i {
+                margin: 0;
+                width: 48px;
+                height: 48px;
+                font-size: 24px; 
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            .form-title 
+            {
+                padding-bottom: 3px !important;
+                margin-bottom: 10px !important;
+            }
+        }
+
+        @media (max-width: 418px) {
+            input#id_work_object,
+            input#id_work_type,
+            input.form-control,
+            input#id_date_start,
+            input#id_date_end,
+            input#id_time_start,
+            input#id_time_end,
+            input#id_transport_type,
+            input#id_break_time,
+            select,
+            textarea {
+                padding: 2px 5px !important;
+
+            }
+            .content-data{
+                display: block;
+            }
+            .content-time{
+                display: block;
+            }
+            .col-6{
+                width: 100%;
+            }
+            .form-section{
+                padding: .5rem;
+                margin-bottom: .8rem;
+            }
+            .row>*{
+                margin-top: .5rem;
+            }
+            .form-container{
+                padding: .6rem .8rem;
+            }
         }
     </style>
 </head>
 
 <body>
-
     <div class="form-container">
         <h2 class="form-title">
-            {% if form.instance.pk %}
-            Редактировать заявку
-            {% else %}
-            Создать заявку
+            {% if form.instance.pk %} Редактировать заявку {% else %} Создать заявку
             {% endif %}
         </h2>
         <span class="title-line"></span>
         <form method="post" novalidate>
-            {% csrf_token %}
-            {{ form.non_field_errors }}
-            {{ form.errors }} <!-- Все ошибки формы -->
+            <!-- Все ошибки формы -->
+            {% csrf_token %} 
+            {{ form.non_field_errors }} {{ form.errors }}
+            
 
-            <!-- Основная информация -->
-            <div class="form-section">
-                <div class="row g-3">
-                    <!-- Локация -->
-                    <div class="col-md-6">
-                        <label for="{{ form.location.id_for_label }}" class="form-label">Локация<span
-                                class="star">*</span></label>
-                        {{ form.location }}
-                        {% if form.location.errors %}
-                        <div class="invalid-feedback d-block">{{ form.location.errors.as_text }}</div>
-                        {% endif %}
-                    </div>
+            <div class="row card-row mb-3">
+                <!-- Основная информация -->
+                <div class="col-md-6 form-section">
+                    <h6>Основная информация</h6>
+                    <div class="row g-3" style="min-width: 300px">
+                        <!-- Локация -->
+                        <div class="col-md-6">
+                            <label for="{{ form.location.id_for_label }}" class="form-label">Локация<span
+                                    class="star">*</span></label>
+                            {{ form.location }} 
+                            {% if form.location.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.location.errors.as_text }}
+                            </div>
+                            {% endif %}
+                        </div>
 
-                    <!-- Объект работ -->
-                    <div class="col-md-6">
-                        <label for="{{ form.work_object.id_for_label }}" class="form-label">Объект работ<span
-                                class="star">*</span></label>
-                        {{ form.work_object }}
-                        {% if form.work_object.errors %}
-                        <div class="invalid-feedback d-block">{{ form.work_object.errors.as_text }}</div>
-                        {% endif %}
-                    </div>
+                        <!-- Объект работ -->
+                        <div class="col-md-6">
+                            <label for="{{ form.work_object.id_for_label }}" class="form-label">Объект работ<span
+                                    class="star">*</span></label>
+                            {{ form.work_object }} 
+                            {% if form.work_object.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.work_object.errors.as_text }}
+                            </div>
+                            {% endif %}
+                        </div>
 
-                    <!-- Вид работ -->
-                    <div class="col-md-6">
-                        <label for="{{ form.work_type.id_for_label }}" class="form-label">Вид работ<span
-                                class="star">*</span></label>
-                        {{ form.work_type }}
-                        {% if form.work_type.errors %}
-                        <div class="invalid-feedback d-block">{{ form.work_type.errors.as_text }}</div>
-                        {% endif %}
-                    </div>
+                        <!-- Вид работ -->
+                        <div class="col-md-6">
+                            <label for="{{ form.work_type.id_for_label }}" class="form-label">Вид работ<span
+                                    class="star">*</span></label>
+                            {{ form.work_type }} 
+                            {% if form.work_type.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.work_type.errors.as_text }}
+                            </div>
+                            {% endif %}
+                        </div>
 
-                    <!-- Транспорт -->
-                    <div class="col-md-6">
-                        <label for="{{ form.transport_type.id_for_label }}" class="form-label">Транспорт<span
-                                class="star">*</span></label>
-                        {{ form.transport_type }}
-                        {% if form.transport_type.errors %}
-                        <div class="invalid-feedback d-block">{{ form.transport_type.errors.as_text }}</div>
-                        {% endif %}
-                    </div>
+                        <!-- Транспорт -->
+                        <div class="col-md-6">
+                            <label for="{{ form.transport_type.id_for_label }}" class="form-label">Транспорт<span
+                                    class="star">*</span></label>
+                            {{ form.transport_type }} 
+                            {% if form.transport_type.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.transport_type.errors.as_text }}
+                            </div>
+                            {% endif %}
+                        </div>
 
-                    <!-- Категория техники -->
-                    <div class="col-md-6">
-                        <label for="{{ form.equipment_category.id_for_label }}" class="form-label">Категория
-                            техники<span class="star">*</span></label>
-                        {{ form.equipment_category }}
-                        {% if form.equipment_category.errors %}
-                        <div class="invalid-feedback d-block">{{ form.equipment_category.errors.as_text }}</div>
-                        {% endif %}
+                        <!-- Категория техники -->
+                        <div class="col-md-6">
+                            <label for="{{ form.equipment_category.id_for_label }}" class="form-label">Категория
+                                техники<span class="star">*</span></label>
+                            {{ form.equipment_category }} 
+                            {% if form.equipment_category.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.equipment_category.errors.as_text }}
+                            </div>
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Даты и время -->
-            <div class="form-section">
-                <h6>Период работ</h6>
-                <div class="row g-3">
-                    <!-- Дата начала -->
-                    <div class="col-md-6 mb-3">
-                        <label for="{{ form.date_start.id_for_label }}" class="form-label">Дата начала<span
-                                class="star">*</span></label>
-                        <div class="input-group">
-                            {{ form.date_start }}
-                        </div>
-                        {% if form.date_start.errors %}
-                        <div class="invalid-feedback d-block">{{ form.date_start.errors.as_text }}</div>
-                        {% endif %}
-                    </div>
-
-                    <!-- Дата окончания -->
-                    <div class="col-md-6 mb-3">
-                        <label for="{{ form.date_end.id_for_label }}" class="form-label">
-                            Дата окончания<span class="star">*</span>
-                        </label>
-                        {{ form.date_end }}
-                        {% if form.date_end.errors %}
-                        <div class="invalid-feedback d-block">{{ form.date_end.errors.as_text }}</div>
-                        {% endif %}
-                    </div>
-                    <!-- Время начала -->
-                    <div class="col-md-6">
-                        <label for="{{ form.time_start.id_for_label }}" class="form-label">Время начала<span
-                                class="star">*</span></label>
-                        {{ form.time_start }}
-                        {% if form.time_start.errors %}
-                        <div class="invalid-feedback d-block">{{ form.time_start.errors.as_text }}</div>
-                        {% endif %}
-                    </div>
-
-                    <!-- Время окончания -->
-                    <div class="col-md-6">
-                        <label for="{{ form.time_end.id_for_label }}" class="form-label">Время окончания</label>
-                        {{ form.time_end }}
-                        {% if form.time_end.errors %}
-                        <div class="invalid-feedback d-block">{{ form.time_end.errors.as_text }}</div>
-                        {% endif %}
-                    </div>
-
-                    <!-- Перерывы -->
-                    <div class="col-md-6 mb-3">
-                        <label for="{{ form.break_periods.id_for_label }}" class="form-label">
-                            {{ form.break_periods.label }}
-                        </label>
-
-                        <!-- Контейнер для динамических полей перерывов -->
-                        <div id="break-periods-container" class="mb-2">
-                            <!-- JS будет вставлять сюда строки с input[type="time"] -->
+                <!-- Период работ -->
+                <div class="col-md-6 form-section">
+                    <h6>Период работ</h6>
+                    <div class="row g-3" style="min-width: 300px">
+                        <!-- Дата начала и окончания -->
+                        <div class="col-12">
+                            <div class="row content-data">
+                                <div class="col-6">
+                                    <label for="{{ form.date_start.id_for_label }}" class="form-label">Дата начала<span
+                                            class="star">*</span></label>
+                                    {{ form.date_start }} 
+                                    {% if form.date_start.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.date_start.errors.as_text }}
+                                        
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-6">
+                                    <label for="{{ form.date_end.id_for_label }}" class="form-label">Дата окончания<span
+                                            class="star">*</span></label>
+                                    {{ form.date_end }} 
+                                    {% if form.date_end.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.date_end.errors.as_text }}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
                         </div>
 
-                        <!-- Кнопка добавления -->
-                        <button type="button" class="btn btn-sm btn-outline-primary" id="add-break-btn">+ Добавить
-                            перерыв</button>
-
-                        <!-- Скрытое поле с JSON -->
-                        {{ form.break_periods }}
-
-                        {% if form.break_periods.help_text %}
-                        <small class="form-text text-muted">{{ form.break_periods.help_text }}</small>
-                        {% endif %}
-
-                        {% if form.break_periods.errors %}
-                        <div class="invalid-feedback d-block">
-                            {{ form.break_periods.errors.as_text }}
+                        <!-- Время начала и окончания -->
+                        <div class="col-12">
+                            <div class="row content-time">
+                                <div class="col-6">
+                                    <label for="{{ form.time_start.id_for_label }}" class="form-label">Время начала<span
+                                            class="star">*</span></label>
+                                    {{ form.time_start }} 
+                                    {% if form.time_start.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.time_start.errors.as_text }}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-6">
+                                    <label for="{{ form.time_end.id_for_label }}" class="form-label">Время
+                                        окончания<span class="star">*</span></label>
+                                    {{ form.time_end }} 
+                                    {% if form.time_end.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.time_end.errors.as_text }}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
                         </div>
-                        {% endif %}
-                    </div>
 
-                    <!-- По факту -->
-                    <div class="col-md-6">
-                        <div class="mt-4 custom_fact_checkbox">
-                            <input class="form-check-input" type="checkbox"
-                                id="{{ form.is_completed_fact.id_for_label }}"
-                                name="{{ form.is_completed_fact.html_name }}" {% if form.is_completed_fact.value %}
-                                checked{% endif %}>
-                            <label class="form-check-label" for="{{ form.is_completed_fact.id_for_label }}">
-                                До окончания работ по факту
-                            </label>
+                        <!-- Перерывы -->
+                        <div class="col-12 mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <label for="id_break_periods" class="form-label mb-0">{{ form.break_periods.label }}</label>
+                                <button type="button" class="btn btn-outline-primary btn-sm" id="add-break-btn">
+                                    <i class="bi bi-plus-lg"></i>
+                                </button>
+                            </div>
+
+                            <div id="break-periods-container">
+                            {# сюда JS подставит существующие или новые строки #}
+                            </div>
+
+                            {{ form.break_periods }}  {# это <textarea id="id_break_periods"> #}
+                            {% if form.break_periods.help_text %}
+                            <small class="form-text text-muted">{{ form.break_periods.help_text }}</small>
+                            {% endif %}
+                            {% if form.break_periods.errors %}
+                            <div class="invalid-feedback d-block">{{ form.break_periods.errors.as_text }}</div>
+                            {% endif %}
+                        </div>
+
+                        <!-- По факту -->
+                        <div class="col-12 mt-0">
+                            <div class="form-check d-flex align-items-center gap-2">
+                                <input class="form-check-input" type="checkbox"
+                                    id="{{ form.is_completed_fact.id_for_label }}"
+                                    name="{{ form.is_completed_fact.html_name }}"
+                                    {% if form.is_completed_fact.value %}
+                                        checked
+                                    {% endif %}
+                                    />
+
+                                <label class="form-check-label mt-1 mb-0" for="{{ form.is_completed_fact.id_for_label }}">
+                                    До окончания работ по факту
+                                </label>
+                            </div>
+
                             {% if form.is_completed_fact.errors %}
-                            <div class="invalid-feedback d-block input-fact">
+                            <div class="invalid-feedback d-block">
                                 {{ form.is_completed_fact.errors.as_text }}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Ответственные лица -->
+                <div class="col-md-6 form-section">
+                    <div class="row g-3">
+                        <!-- Ответственный -->
+                        <div class="col-md-6 mb-3"  style="width: 100%;">
+                        <label for="id_responsible" class="form-label">Ответственный<span class="star">*</span></label>
+                        <select id="id_responsible"
+                                name="responsible"
+                                class="form-select change-responsible"
+                                data-id="{{ form.instance.pk|default:'' }}"
+                                style="width:100%">
+                            <option value="">—</option>
+                            {% for p in responsibles %}
+                            <option value="{{ p.id }}"
+                                    data-position="{{ p.position }}"
+                                    {% if form.instance.responsible_id == p.id %}selected{% endif %}>
+                                {{ p.full_name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        {% if form.responsible.errors %}
+                            <div class="invalid-feedback d-block">
+                            {{ form.responsible.errors.as_text }}
+                            </div>
+                        {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Комментарий -->
+                <div class="col-md-6 form-section">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label for="{{ form.comment.id_for_label }}" class="form-label">Комментарий</label>
+                            {{ form.comment }} 
+                            {% if form.comment.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.comment.errors.as_text }}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Подъемные сооружения -->
+                <div class="col-md-6 form-section lifting-fields" id="liftingFields" style="display: none">
+                    <h6>Дополнительная информация для подъемных сооружений</h6>
+                    <div class="row g-3">
+                        <!-- Номер удостоверения ответственного -->
+                        <div class="col-12">
+                            <label for="{{ form.responsible_certificate.id_for_label }}" class="form-label">Номер
+                                удостоверения ответственного<span class="star">*</span></label>
+                            {{ form.responsible_certificate }} 
+                            {% if form.responsible_certificate.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.responsible_certificate.errors.as_text }}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- ФИО стропальщика -->
+                        <div class="col-12">
+                            <label for="{{ form.rigger_name.id_for_label }}" class="form-label">ФИО стропальщиков<span
+                                    class="star">*</span></label>
+                            <small class="text-muted small-hint">Укажите через запятую</small>
+                            {{ form.rigger_name }} 
+                            {% if form.rigger_name.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.rigger_name.errors.as_text }}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Номера удостоверений -->
+                        <div class="col-12">
+                            <label for="{{ form.rigger_certificates.id_for_label }}" class="form-label">Номера
+                                удостоверений стропальщиков<span class="star">*</span></label>
+                            <small class="text-muted small-hint">Укажите через запятую</small>
+                            {{ form.rigger_certificates }} 
+                            {% if form.rigger_certificates.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.rigger_certificates.errors.as_text }}
                             </div>
                             {% endif %}
                         </div>
@@ -418,80 +629,12 @@
                 </div>
             </div>
 
-
-            <!-- Ответственные лица -->
-            <div class="form-section">
-                <div class="row g-3">
-                    <!-- Ответственный -->
-                    <div class="col-md-6" style="margin-bottom: 20px;">
-                        <label for="{{ form.responsible.id_for_label }}" class="form-label">Ответственный<span
-                                class="star">*</span></label>
-                        {{ form.responsible }}
-                        {% if form.responsible.errors %}
-                        <div class="invalid-feedback d-block">{{ form.responsible.errors.as_text }}</div>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-
-            <!-- Комментарий -->
-            <div class="form-section">
-                <div class="row g-3">
-                    <div class="col-12">
-                        <label for="{{ form.comment.id_for_label }}" class="form-label">Комментарий</label>
-                        {{ form.comment }}
-                        {% if form.comment.errors %}
-                        <div class="invalid-feedback d-block">{{ form.comment.errors.as_text }}</div>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-
-            <!-- Подъемные сооружения -->
-            <div class="form-section lifting-fields" id="liftingFields" style="display: none;">
-                <h6>Дополнительная информация для подъемных сооружений</h6>
-                <div class="row g-3">
-                    <!-- Номер удостоверения ответственного -->
-                    <div class="col-12">
-                        <label for="{{ form.responsible_certificate.id_for_label }}" class="form-label">Номер
-                            удостоверения ответственного<span class="star">*</span></label>
-                        {{ form.responsible_certificate }}
-                        {% if form.responsible_certificate.errors %}
-                        <div class="invalid-feedback d-block">{{ form.responsible_certificate.errors.as_text }}</div>
-                        {% endif %}
-                    </div>
-
-                    <!-- ФИО стропальщика -->
-                    <div class="col-12">
-                        <label for="{{ form.rigger_name.id_for_label }}" class="form-label">ФИО стропальщиков<span
-                                class="star">*</span></label>
-                        <small class="text-muted small-hint">Укажите через запятую</small>
-                        {{ form.rigger_name }}
-                        {% if form.rigger_name.errors %}
-                        <div class="invalid-feedback d-block">{{ form.rigger_name.errors.as_text }}</div>
-                        {% endif %}
-                    </div>
-
-                    <!-- Номера удостоверений -->
-                    <div class="col-12">
-                        <label for="{{ form.rigger_certificates.id_for_label }}" class="form-label">Номера удостоверений
-                            стропальщиков<span class="star">*</span></label>
-                        <small class="text-muted small-hint">Укажите через запятую</small>
-                        {{ form.rigger_certificates }}
-                        {% if form.rigger_certificates.errors %}
-                        <div class="invalid-feedback d-block">{{ form.rigger_certificates.errors.as_text }}</div>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-
             <!-- Кнопки -->
             <div class="d-flex justify-content-between align-items-center mt-4 pt-2">
-                <a href="{% url 'request_list' %}" class="back-link">
-                    <i class="bi bi-arrow-left-circle me-1"></i>Назад к списку
-                </a>
+                <a href="{% url 'request_list' %}" class="btn btn-outline-secondary">Отмена</a>
                 <button type="submit" class="btn btn-gradient">
-                    <i class="bi bi-save me-2"></i>Сохранить заявку
+                    <i class="bi bi-save"></i>
+                    <span>Сохранить заявку</span>
                 </button>
             </div>
         </form>
@@ -511,174 +654,207 @@
     <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ru.js"></script>
 
     <script>
-        let breakCounter = 0;
+        function addBreakPeriod(start = "", end = "") {
+            const container = document.getElementById("break-periods-container");
 
-        function addBreakPeriod(start = '', end = '') {
-            const container = document.getElementById('break-periods-container');
-
-            const row = document.createElement('div');
-            row.classList.add('row', 'g-2', 'align-items-center', 'mb-1');
-            row.dataset.index = breakCounter;
+            const row = document.createElement("div");
+            row.className = "d-flex align-items-center gap-2 mb-2 break-row";
 
             row.innerHTML = `
-                <div class="col-5">
-                    <input type="time" class="form-control break-start" value="${start}">
-                </div>
-                <div class="col-5">
-                    <input type="time" class="form-control break-end" value="${end}">
-                </div>
-                <div class="col-2">
-                    <button type="button" class="btn btn-outline-danger btn-sm remove-break-btn">Удалить</button>
-                </div>
+                <input type="time" class="form-control break-start" value="${start}">
+                <span>до</span>
+                <input type="time" class="form-control break-end" value="${end}">
+                <button type="button" class="btn btn-sm btn-outline-danger remove-break-btn">&times;</button>
             `;
 
             container.appendChild(row);
-            breakCounter++;
         }
 
-        function initBreakPeriods() {
-            // Заполнение значениями при редактировании
-            const existing = JSON.parse(document.getElementById('break-periods-data').textContent);
-            if (Array.isArray(existing)) {
-                existing.forEach(item => addBreakPeriod(item.start, item.end));
-            }
+        // Инициализация
+        document.addEventListener('DOMContentLoaded', function () {
+            let existing = [];
+            try {
+                const raw = document.getElementById('id_break_periods').value;
+                if (raw) existing = JSON.parse(raw); // ["03:30-03:04", "16:30-16:00"]
+            } catch (e) {}
 
-            // Обработчик добавления нового перерыва
-            document.getElementById('add-break-btn').addEventListener('click', () => {
-                addBreakPeriod();
-            });
-
-            // Удаление перерыва
-            document.getElementById('break-periods-container').addEventListener('click', function (e) {
-                if (e.target.classList.contains('remove-break-btn')) {
-                    e.target.closest('.row').remove();
+            existing.forEach(str => {
+                if (typeof str === "string" && str.includes("-")) {
+                    const [start, end] = str.split("-");
+                    addBreakPeriod(start, end);
                 }
             });
+        });
 
-            // Сериализация перерывов при отправке формы
-            document.querySelector('form').addEventListener('submit', function () {
-                const breaks = [];
+        // Добавить новую строку
+        document.getElementById('add-break-btn')
+            .addEventListener('click', () => addBreakPeriod());
 
-                document.querySelectorAll('#break-periods-container .row').forEach(row => {
-                    const start = row.querySelector('.break-start').value;
-                    const end = row.querySelector('.break-end').value;
+        // Удаление строки
+        document.getElementById('break-periods-container').addEventListener('click', function (e) {
+            if (e.target.classList.contains('remove-break-btn')) {
+                e.target.closest('.break-row').remove();
+            }
+        });
 
-                    if (start && end) {
-                        breaks.push({ start, end });
-                    }
-                });
-
-                document.getElementById('{{ form.break_periods.id_for_label }}').value = JSON.stringify(breaks);
+        // При сабмите сериализуем
+        document.querySelector('form').addEventListener('submit', function () {
+            const out = [];
+            document.querySelectorAll('#break-periods-container .break-row').forEach(row => {
+                const s = row.querySelector('.break-start').value;
+                const e = row.querySelector('.break-end').value;
+                if (s && e) out.push(`${s}-${e}`);
             });
-        }
+            document.getElementById('id_break_periods').value = JSON.stringify(out);
+        });
 
-        function initSelect2() {
-            // Select2 для ответственного
-            $('#{{ form.responsible.id_for_label }}').select2({
-                theme: 'bootstrap-5',
-                placeholder: 'Выберите ответственного',
-                allowClear: true,
-                width: '100%'
-            });
-        }
+        const liftingCode = "{{ lifting_category_id|default:'' }}";
 
         function initDatepickers() {
             // flatpickr для дат
-            flatpickr("#{{ form.date_start.id_for_label }}", {
+            const datePickerConfig = {
                 locale: "ru",
-                dateFormat: "d.m.Y",
+                dateFormat: "Y-m-d",
                 altInput: true,
                 altFormat: "d.m.Y",
                 allowInput: true,
                 onChange: function (selectedDates, dateStr, instance) {
                     instance.input.classList.toggle('is-invalid', selectedDates.length === 0);
                 }
-            });
+            };
 
-            flatpickr("#{{ form.date_end.id_for_label }}", {
-                locale: "ru",
-                dateFormat: "d.m.Y",
-                altInput: true,
-                altFormat: "d.m.Y",
-                allowInput: true,
-                onChange: function (selectedDates, dateStr, instance) {
-                    instance.input.classList.toggle('is-invalid', selectedDates.length === 0);
-                }
-            });
+            flatpickr("#id_date_start", datePickerConfig);
+            flatpickr("#id_date_end", datePickerConfig);
+
 
             // flatpickr для времени
             flatpickr("#{{ form.time_start.id_for_label }}", {
                 enableTime: true,
                 noCalendar: true,
                 dateFormat: "H:i",
-                time_24hr: true
+                time_24hr: true,
             });
 
             flatpickr("#{{ form.time_end.id_for_label }}", {
                 enableTime: true,
                 noCalendar: true,
                 dateFormat: "H:i",
-                time_24hr: true
+                time_24hr: true,
             });
         }
-
+        
         function toggleLiftingFields() {
-            const category = $('#{{ form.equipment_category.id_for_label }}').val();
-            const liftingFields = $('#liftingFields');
-            const requiredStars = liftingFields.find('.star');
+            const categoryId = $("#{{ form.equipment_category.id_for_label }}").val();
+            const isLifting = categoryId === liftingCode;
 
-            if (category === 'lifting') {
+            const liftingFields = $("#liftingFields");
+            const requiredStars = liftingFields.find(".star");
+
+            if (isLifting) {
                 liftingFields.slideDown();
-                // Делаем поля обязательными
-                liftingFields.find('input, textarea').each(function() {
-                    $(this).prop('required', true);
-                });
+                liftingFields.find("input, textarea").prop("required", true);
                 requiredStars.show();
             } else {
                 liftingFields.slideUp();
-                // Снимаем обязательность и очищаем поля
-                liftingFields.find('input, textarea').each(function() {
-                    $(this).prop('required', false).val('');
-                });
+                liftingFields.find("input, textarea").prop("required", false).val("");
                 requiredStars.hide();
             }
         }
-
+        
         function initLiftingFields() {
+            // Принудительно запускаем переключение при загрузке
             toggleLiftingFields();
 
             // Обработчик изменения категории
-            $('#{{ form.equipment_category.id_for_label }}').on('change', function() {
+            $("#{{ form.equipment_category.id_for_label }}").on("change", function () {
                 toggleLiftingFields();
             });
 
-            // Обработчик отправки формы - валидация для lifting
-            $('form').on('submit', function() {
-                const category = $('#{{ form.equipment_category.id_for_label }}').val();
-                if (category === 'lifting') {
+            // Обработчик отправки формы
+            $("form").on("submit", function () {
+                const category = $("#{{ form.equipment_category.id_for_label }}").val();
+                const liftingFields = $("#liftingFields");
+                const requiredStars = liftingFields.find(".star");
+
+                if (category === "lifting") {
                     let isValid = true;
-                    $('#liftingFields').find('input, textarea').each(function() {
+                    liftingFields.find("input, textarea").each(function () {
                         if (!$(this).val()) {
-                            $(this).addClass('is-invalid');
+                            $(this).addClass("is-invalid");
                             isValid = false;
                         } else {
-                            $(this).removeClass('is-invalid');
+                            $(this).removeClass("is-invalid");
                         }
                     });
                     return isValid;
+                } else {
+                    liftingFields.find("input, textarea").removeClass("is-invalid");
                 }
+
                 return true;
             });
         }
 
-        document.addEventListener('DOMContentLoaded', function() {
+        function formatResponsible(option) {
+            if (!option.id) {
+            return option.text; 
+            }
+            const title    = option.text;
+            const position = $(option.element).data('position') || '';
+            return $(`
+            <div>
+                <div>${title}</div>
+                <small class="text-muted">${position}</small>
+            </div>
+            `);
+        }
+
+        // 2) Инициализация Select2 на нашем селекте
+        $('.change-responsible').select2({
+            theme: 'bootstrap-5',
+            placeholder: 'Выберите ответственного',
+            allowClear: false,
+            width: 'resolve',
+            templateResult: formatResponsible,
+            templateSelection: formatResponsible,
+            escapeMarkup: m => m
+        });
+
+        // 3) AJAX‑обновление ответственного при выборе
+        $('.change-responsible').on('change', function() {
+            const $sel          = $(this),
+                requestId    = $sel.data('id'),
+                responsibleId= $sel.val();
+
+            // если создаём новую заявку (нет ID) — просто вернёмся
+            if (!requestId) return;
+
+            fetch("{% url 'update_responsible' %}", {
+            method: "POST",
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                request_id:     requestId,
+                responsible_id: responsibleId
+            })
+            })
+            .then(r => r.json())
+            .then(js => {
+            if (!js.success) {
+                alert('Ошибка: ' + js.error);
+            }
+            });
+        });
+        document.addEventListener("DOMContentLoaded", function () {
             initBreakPeriods();
             initSelect2();
             initDatepickers();
             initLiftingFields();
+            toggleLiftingFields();
         });
     </script>
-
 </body>
 
 </html>

@@ -21,7 +21,6 @@ from core.views import (
     custom_400,
 )
 
-
 urlpatterns = [
     path('', redirect_after_login_view, name='index'),
     path('admin/', admin.site.urls),
@@ -36,12 +35,10 @@ urlpatterns = [
     path('requests/create/', request_create_view, name='request_create'),
     path('requests/<int:pk>/edit/', request_update_view, name='request_update'),
     path('requests/<int:pk>/cancel/', request_cancel_view, name='request_cancel'),
-    path('requests/<int:pk>/duplicate/', request_double, name='request_double'),
-
-
+    path('requests/double/<int:pk>/', request_double, name='request_double'),
+    path('requests/update/<int:pk>/', request_update_view, name='request_update'),
     path('api/update_status/', update_status, name='update_status'),
     path('api/update_responsible/', update_responsible, name='update_responsible'),
-
 
 ]
 

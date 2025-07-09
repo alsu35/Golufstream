@@ -1,3 +1,4 @@
+from datetime import timezone
 import json
 from django.http import Http404, HttpResponseBadRequest, JsonResponse
 from django.shortcuts import render, get_object_or_404, redirect
@@ -99,7 +100,6 @@ from django.middleware.csrf import CsrfViewMiddleware
 
 csrfmiddlewareexempt = decorator_from_middleware(CsrfViewMiddleware)
 
-
 @login_required
 def request_list_view(request):
     user = request.user
@@ -119,12 +119,12 @@ def request_list_view(request):
 
     responsibles = None
     if profile and profile.role.code == 'operator' and profile.location:
-        # Берём всех сотрудников в этой локации, но исключаем админов
         responsibles = Profile.objects.filter(
             location=profile.location
         ).exclude(
-            role__code='admin'
-        )
+            role__code__in=['admin', 'operator']
+        ).select_related('user')
+
 
     return render(request, 'requests/request_list.html', {
         'requests': qs,
@@ -159,7 +159,6 @@ def update_status(request):
         return JsonResponse({'success': True})
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
-
 
 @csrf_exempt
 @require_POST
@@ -214,6 +213,12 @@ def request_detail_view(request, pk):
 def request_create_view(request):
     user = request.user
     profile = getattr(user, 'profile', None)
+    responsibles = Profile.objects.filter(
+        location=profile.location
+    ).exclude(
+        role__code__in=['operator', 'admin']
+    ).select_related('user')
+
 
     if not any([user.is_superuser, _has_role(user, 'admin'), _has_role(user, 'operator'), _has_role(user, 'customer')]):
         return HttpResponseForbidden("Нет прав на создание заявки")
@@ -229,7 +234,7 @@ def request_create_view(request):
             req.location = profile.location
             
             # Очищаем поля для подъемных сооружений, если категория не "lifting"
-            if req.equipment_category.code != 'lifting':
+            if not req.equipment_category or req.equipment_category.code != 'lifting':
                 req.responsible_certificate = None
                 req.rigger_name = None
                 req.rigger_certificates = None
@@ -241,6 +246,12 @@ def request_create_view(request):
             
             req.save()
             return redirect('request_list')
+        else:
+            return render(request, 'requests/request_form.html', {
+                'form': form,
+                'show_lifting_fields': req.equipment_category and req.equipment_category.code == 'lifting'
+            })
+
     else:
         initial_data = {}
         if profile:
@@ -253,60 +264,10 @@ def request_create_view(request):
 
     return render(request, 'requests/request_form.html', {
         'form': form,
-        'show_lifting_fields': False 
-    })
-
-
-@login_required
-def request_update_view(request, pk):
-    user = request.user
-    profile = getattr(user, 'profile', None)
-
-    if not any([user.is_superuser, _has_role(user, 'admin'), _has_role(user, 'operator'), _has_role(user, 'customer')]):
-        return HttpResponseForbidden("Нет прав на редактирование")
-
-    req = get_object_or_404(
-        Request.objects.select_related(
-            'customer', 'location', 'status', 'customer__department__organization'
-        ),
-        pk=pk
-    )
-
-    # operator – только по локации
-    if _has_role(user, 'operator') and req.location != profile.location:
-        return HttpResponseForbidden("Можно редактировать только по своей локации")
-
-    # customer – только свои и не в работе
-    if _has_role(user, 'customer'):
-        if req.customer != profile:
-            return HttpResponseForbidden("Можно редактировать только свои заявки")
-        if req.status.code == 'work':
-            return HttpResponseForbidden("Заявка в статусе 'work' не изменяется")
-
-    form = RequestForm(request.POST or None, instance=req, user=user)
-
-    # ограничиваем права заказчика
-    if _has_role(user, 'customer'):
-        form.fields.pop('status', None)
-        for f in list(form.fields):
-            if f not in ('is_completed_fact', 'comment'):
-                form.fields[f].widget.attrs['readonly'] = True
-                form.fields[f].required = False
-
-    if request.method == 'POST':
-        if form.is_valid():
-            form.save()
-            messages.success(request, 'Заявка обновлена')
-            return redirect('request_detail', pk=pk)
-        messages.error(request, 'Проверьте корректность полей')
-
-    return render(request, 'requests/request_form.html', {
-        'form': form,
-        'update': True,
-        'req': req,
+        'show_lifting_fields': False,
+        'responsibles': responsibles,
         'profile': profile,
     })
-
 
 @login_required
 def request_cancel_view(request, pk):
@@ -338,15 +299,131 @@ def request_cancel_view(request, pk):
     return redirect('request_detail', pk=pk)
 
 @login_required
+def request_update_view(request, pk=None):
+    user = request.user
+    profile = getattr(user, 'profile', None)
+    
+    # Получаем список ответственных
+    responsibles = Profile.objects.filter(
+        location=profile.location
+    ).exclude(
+        role__code__in=['operator', 'admin']
+    ).select_related('user')
+
+    if not any([user.is_superuser, _has_role(user, 'admin'), _has_role(user, 'operator'), _has_role(user, 'customer')]):
+        return HttpResponseForbidden("Нет прав на редактирование")
+
+    # Для новой заявки (дубликата) pk будет None
+    if pk:
+        req = get_object_or_404(
+            Request.objects.select_related(
+                'customer', 'location', 'status', 'customer__department__organization'
+            ),
+            pk=pk
+        )
+    else:
+        req = None
+
+    # Проверка прав доступа для существующей заявки
+    if req and _has_role(user, 'operator') and req.location != profile.location:
+        return HttpResponseForbidden("Можно редактировать только по своей локации")
+    
+    if req and _has_role(user, 'customer') and (req.customer != profile or req.status.code == 'work'):
+        return HttpResponseForbidden("Нет прав на редактирование этой заявки")
+
+    if request.method == 'POST':
+        form = RequestForm(request.POST, instance=req, user=user)
+        if form.is_valid():
+            new_req = form.save(commit=False)
+            new_req.customer = profile
+            new_req.save()
+            messages.success(request, 'Заявка успешно сохранена')
+            return redirect('request_detail', pk=new_req.pk)
+        
+        messages.error(request, 'Проверьте корректность полей')
+    else:
+        if req:
+            form = RequestForm(instance=req, user=user)
+        else:
+            # Это случай, когда мы создаем новую заявку (не дублирование)
+            form = RequestForm(user=user)
+
+    # Ограничение прав для заказчика
+    if _has_role(user, 'customer'):
+        form.fields.pop('status', None)
+        for f in list(form.fields):
+            if f not in ('is_completed_fact', 'comment'):
+                form.fields[f].widget.attrs['readonly'] = True
+                form.fields[f].required = False
+
+    # Получаем ID категории "lifting"
+    try:
+        lifting_category = Category.objects.get(code='lifting')
+        lifting_category_id = lifting_category.id
+    except Category.DoesNotExist:
+        lifting_category_id = ''
+
+    return render(request, 'requests/request_form.html', {
+        'form': form,
+        'update': bool(req),  # False для новой заявки
+        'responsibles': responsibles,
+        'profile': profile,
+        'is_duplicate': 'original_pk' in request.GET,  # Флаг дублирования
+        'lifting_category_id': lifting_category_id,
+    })
+
+@login_required
 def request_double(request, pk):
+    """Создает черновик заявки и открывает форму редактирования"""
     original = get_object_or_404(Request, pk=pk)
+    user = request.user
+    profile = getattr(user, 'profile', None)
 
-    original.pk = None 
-    original.id = None           
-    original._state.adding = True 
-    original.save()
+    if not profile:
+        return HttpResponseForbidden("Нет профиля")
 
-    return redirect('request_update', pk=original.pk)
+    # Создаем черновик без сохранения в БД
+    duplicate = Request(
+        location=original.location,
+        date_start=original.date_start,
+        date_end=original.date_end,
+        time_start=original.time_start,
+        time_end=original.time_end,
+        work_object=original.work_object,
+        work_type=original.work_type,
+        transport_type=original.transport_type,
+        equipment_category=original.equipment_category,
+        break_periods=original.break_periods,
+        comment=original.comment,
+        responsible=original.responsible,
+        responsible_certificate=original.responsible_certificate,
+        rigger_name=original.rigger_name,
+        rigger_certificates=original.rigger_certificates,
+        customer=profile,
+        is_completed_fact=original.is_completed_fact, 
+    )
+
+    try:
+        duplicate.status = Status.objects.get(code="new")
+    except Status.DoesNotExist:
+        pass
+
+    form = RequestForm(instance=duplicate, user=user)
+
+    responsibles = Profile.objects.filter(
+        location=profile.location
+    ).exclude(
+        role__code__in=['operator', 'admin']
+    ).select_related('user')
+
+    return render(request, 'requests/request_form.html', {
+        'form': form,
+        'is_duplicate': True,
+        'original_pk': pk,
+        'responsibles': responsibles,
+        'profile': profile,
+        'duplicated': True,
+    })
 
 # ———————— Ошибки ————————
 def custom_400(request, exception=None):
