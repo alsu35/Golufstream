@@ -1,82 +1,125 @@
 <!DOCTYPE html>
 <html lang="ru">
-
 <head>
+    <!-- Базовые мета-теги -->
     <meta charset="UTF-8">
     <title>Заявка #{{ req.id }}</title>
+    <!-- Viewport для корректного отображения на мобильных устройствах -->
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    
+    <!-- Подключение статических файлов -->
     {% load static %}
+    <!-- Favicon в различных форматах -->
     <link rel="icon" href="{% static 'img/favicon.png' %}" type="image/png">
     <link rel="shortcut icon" href="{% static 'img/favicon.ico' %}" type="image/x-icon">
 
-    <!-- Bootstrap 5 CSS -->
+    <!-- Подключение Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-            body {
-            background-color: #f8f9fa;
-            font-size: 0.95rem;
+    
+    <style>        
+        /* Базовые настройки body */
+        body {
+            background-color: #f8f9fa;  /* Светло-серый фон */
+            font-size: 0.95rem;  /* Базовый размер шрифта */
         }
-
+        
+        /* Стили для бейджей статусов */
         .status-badge {
-            font-size: clamp(0.8rem, 1.1vw, 1.2rem);
+            font-size: clamp(0.8rem, 1.1vw, 1.2rem);  /* Адаптивный размер шрифта */
             font-weight: bold;
             padding: 0.35em 0.8em;
             border-radius: 5px;
             color: white;
-            background: linear-gradient(135deg, #8E3798, #574CA1, #4DA4CB);
+            background: linear-gradient(135deg, #8E3798, #574CA1, #4DA4CB);  /* Градиентный фон */
             display: inline-block;
         }
 
+        /* Стили для шапки модальных окон */
         .modal-header {
             background: linear-gradient(135deg, #8E3798, #574CA1, #4DA4CB);
             color: white;
         }
 
+        /* Стили для карточек */
         .card-header {
-            background-color: #f1f3f5;
-            padding: 0.5rem 1rem;
+            background-color: #f1f3f5;  /* Светло-серый фон */
+            padding: 0.5rem 1rem;  /* Компактные отступы */
         }
+        
+        /* Адаптивный текст в центре */
         .text-center.align-items-center.mt-2 {
-        font-size: calc(0.7rem + 0.7vw);
+            font-size: calc(0.7rem + 0.7vw);  /* Адаптивный размер шрифта */
         }
+        
+        /* Тело карточки */
         .card-body {
-            padding: 0.75rem 1rem;
+            padding: 0.75rem 1rem;  /* Оптимальные отступы */
         }
 
+        /* Настройки для alert-сообщений */
         .alert {
             margin-bottom: 0.75rem;
         }
 
+        /* Адаптивные заголовки */
         h5 {
-            font-size: calc(0.5rem + .7vw);
+            font-size: calc(0.5rem + .7vw);  /* Адаптивный размер */
         }
 
+        /* Базовые стили для параграфов */
         p {
             margin-bottom: 0.4rem;
+            font-size: calc(0.7rem + .3vw);  /* Адаптивный размер */
         }
 
+        /* 
+        * СТИЛИ ДЛЯ РАЗЛИЧНЫХ СТАТУСОВ ЗАЯВОК
+        */
         .card-header.status-new {
-            background-color: #f4d867 !important;
+            background-color: #f4d867 !important;  /* Желтый для новых */
         }
-
         .card-header.status-assigned {
-            background-color: #D1B3FF !important;
+            background-color: #D1B3FF !important;  /* Фиолетовый для назначенных */
         }
-
         .card-header.status-work {
-            background-color: #B2EAC3 !important;
+            background-color: #B2EAC3 !important;  /* Зеленый для в работе */
         }
-
         .card-header.status-done {
-            background-color: #88c9ed !important;
+            background-color: #88c9ed !important;  /* Голубой для завершенных */
         }
-
         .card-header.status-cancel {
-            background-color: #ff9696 !important;
+            background-color: #ff9696 !important;  /* Красный для отмененных */
+        }
+        .card-header.status-default {
+            background-color: #e9ecef !important;  /* Серый по умолчанию */
         }
 
-        .card-header.status-default {
-            background-color: #e9ecef !important;
+        /* 
+        * КАРТОЧКИ ПЕРСОНАЛА
+        */
+        .card-personal{
+            max-width: 48%;  /* Две карточки в ряд */
+        }
+
+        /* 
+        * АДАПТИВНЫЕ СТИЛИ ДЛЯ МОБИЛЬНЫХ УСТРОЙСТВ
+        */
+        @media (max-width: 770px)  {
+            .card-personal{
+                max-width: 100%;  /* Одна карточка на весь экран */
+            }
+            .card-body {
+                padding: 0.5rem .5rem;  /* Уменьшенные отступы */
+            }
+            .p-3 {
+                padding: .5rem !important;  /* Компактные отступы */
+            }
+            .gap-4 {
+                gap: 1rem !important;  /* Уменьшенный промежуток */
+            }
+            .mb-4 {
+                margin-bottom: .5rem !important;  /* Уменьшенный отступ снизу */
+            }
         }
     </style>
 </head>
@@ -127,7 +170,7 @@
         </div>
         <div class="d-flex flex-wrap mb-4 gap-4">
             <!-- Информация о заказчике -->
-            <div class="card shadow-sm flex-grow-1" style="min-width: 300px; max-width: 48%;">
+            <div class="card shadow-sm flex-grow-1 card-personal">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">Заказчик</h5>
                     <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#customerModal">
@@ -179,7 +222,7 @@
             </div>
 
             <!-- Информация об ответственном -->
-            <div class="card shadow-sm flex-grow-1" style="min-width: 300px; max-width: 48%;">
+            <div class="card shadow-sm flex-grow-1 card-personal">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">Ответственный</h5>
                     <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal"
@@ -242,8 +285,6 @@
                 <p class="mb-1"><strong>Вид работ:</strong> {{ req.work_type }}</p>
                 <p class="mb-1"><strong>Транспорт:</strong> {{ req.transport_type }}</p>
                 <p class="mb-0"><strong>Категория техники:</strong> {{ req.equipment_category }}</p>
-
-
             </div>
         </div>
 
