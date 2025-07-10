@@ -60,6 +60,7 @@
             font-weight: 600;
             color: #5a5a5a;
             margin-bottom: 0;
+            font-size: calc(0.7rem + .4vw);
         }
 
         input,
@@ -127,7 +128,8 @@
         .form-section h6 {
             color: #5a5a5a;
             font-weight: 600;
-            margin-bottom: 1rem;
+            margin-bottom: calc(0.6rem + 0.3vw);
+            font-size: calc(0.7rem + .7vw);
         }
 
         .input-group-text {
@@ -139,21 +141,22 @@
         .form-control.input-group-lg {
             border-radius: 0 8px 8px 0;
         }
-
-        .select2-container .select2-selection {
-            border: 1px solid #ced4da !important;
-            border-radius: 8px;
-            height: 40px;
-            padding: 6px 12px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-            background: #f1f3f5;
-            display: flex;
+        
+        .select2-container--bootstrap-5 .select2-selection--single {
+            background-color: #fff;         
+            border: 1px solid #ced4da;    
+            border-radius: 8px;            
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            height: calc(1rem + 4vh);                
+            padding: 6px 12px;             
+            width: 100% !important;    
+            transition: all 0.3s ease;
         }
 
-                
         .form-check-label {
             margin-top: 0; 
             margin-bottom: 0;
+            font-size: calc(0.6rem + .4vw);
         }
 
         .form-check-input {
@@ -248,16 +251,6 @@
             margin-left: 8px;
         }
 
-        .select2-container--bootstrap-5 .select2-selection--single {
-            background-color: #fff;         
-            border: 1px solid #ced4da;    
-            border-radius: 8px;            
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-            height: 40px;                    
-            padding: 6px 12px;             
-            width: 100% !important;    
-            transition: all 0.3s ease;
-        }
 
         /* Текст и стрелка внутри селекта */
         .select2-container--bootstrap-5 .select2-selection__rendered {
@@ -290,8 +283,12 @@
             border: none; 
             color: #dc3545; 
             font-size: 1.2rem; 
-            line-height:1; }
+            line-height:1; 
+        }
 
+        .select2-selection__rendered {
+            margin-top: -30px;
+        }
         @media (max-width: 700px) {
             .responsive-cancel-btn .btn-text {
                 display: none;
@@ -323,10 +320,16 @@
             input#id_time_end,
             input#id_transport_type,
             input#id_break_time,
+            input#id_equipment_category,
             select,
             textarea {
                 padding: 2px 5px !important;
-
+                height: 30px;
+                font-size: calc(0.6rem + .4vw) !important;
+            }
+            .select2-container {
+                height: 50px !important;
+                font-size: calc(0.6rem + .4vw) !important;
             }
             .content-data{
                 display: block;
@@ -419,7 +422,9 @@
 
                         <!-- Категория техники -->
                         <div class="col-md-6">
-                        {{ form.equipment_category.label_tag }}
+                        <label for="{{ form.equipment_category.id_for_label }}" class="form-label">Категория техники:<span
+                                    class="star">*</span></label>
+                        <!-- {{ form.equipment_category.label_tag }} -->
                         {{ form.equipment_category }}
                         {% if form.equipment_category.errors %}
                             <div class="invalid-feedback d-block">
@@ -431,7 +436,9 @@
                         <!-- Статус заявки (только если поле есть в форме) -->
                         {% if form.status %}
                         <div class="col-md-6">
-                            {{ form.status.label_tag }}
+                            <label for="{{ form.status.id_for_label }}" class="form-label">Статус заявки:<span
+                                    class="star">*</span></label>
+                            <!-- {{ form.status.label_tag }} -->
                             {{ form.status }}
                             {% if form.status.errors %}
                             <div class="invalid-feedback d-block">
@@ -502,7 +509,7 @@
                         </div>
 
                         <!-- Перерывы -->
-                        <div class="col-12 mb-3">
+                        <div class="col-12">
                             <div class="d-flex justify-content-between align-items-center mb-2">
                                 <label for="id_break_periods" class="form-label mb-0">{{ form.break_periods.label }}</label>
                                 <button type="button" class="btn btn-outline-primary btn-sm" id="add-break-btn">
@@ -552,8 +559,10 @@
                 <div class="col-md-6 form-section">
                     <div class="row g-3">
                         <!-- Ответственный -->
-                        <div class="col-md-6 mb-3"  style="width: 100%;">
-                        <label for="id_responsible" class="form-label">Ответственный<span class="star">*</span></label>
+                        <div class="col-md-6 mb-3" style="width: 100%;">
+                        <label for="id_responsible" class="form-label">
+                            Ответственный<span class="star">*</span>
+                        </label>
                         <select id="id_responsible"
                                 name="responsible"
                                 class="form-select change-responsible"
