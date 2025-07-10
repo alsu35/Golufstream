@@ -1,46 +1,88 @@
+# Стандартные библиотеки
 from datetime import timezone
 import json
-from django.http import Http404, HttpResponseBadRequest, JsonResponse
+
+# Django core
+from django.http import (
+    Http404,
+    HttpResponseBadRequest,
+    HttpResponseForbidden,
+    HttpResponseServerError,
+    JsonResponse,
+)
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
-from django.http import HttpResponseForbidden, HttpResponseServerError, JsonResponse
 from django.contrib import messages
 from django.urls import reverse
 from django.core.cache import cache
 from django.contrib.auth import logout, authenticate, login
 from django.db import transaction
+from django.utils.decorators import decorator_from_middleware
+from django.middleware.csrf import CsrfViewMiddleware
+from django.views.decorators.csrf import csrf_exempt
 
-from .models import Request, Status, OrganizationLocation, Category, Profile
+# Формы
 from .forms import RequestForm, LoginForm
 
-# ———————— Helpers ————————
-def _get_cached(key, queryset_fn, timeout=60*15):
-    """Общая обёртка для кэша списков справочников."""
+# Модели
+from .models import (
+    Request,
+    Status,
+    OrganizationLocation,
+    Category,
+    Profile,
+    User,
+)
+from core.models import (
+    Request as CoreRequest,
+    Profile as CoreProfile,
+    Status as CoreStatus,
+    OrganizationLocation as CoreOrgLocation,
+    Category as CoreCategory,
+)
+
+
+# ———————————— Caching Helpers ————————————
+def _get_cached(key, queryset_fn, timeout=60 * 15):
+    """
+    Универсальный кэширующий декоратор для справочников.
+    Возвращает закэшированные данные или выполняет и кэширует queryset.
+    """
     data = cache.get(key)
     if data is None:
         data = list(queryset_fn())
         cache.set(key, data, timeout)
     return data
 
+
+# ———————————— Cached Dictionaries ————————————
 def get_cached_statuses():
+    """Получить закэшированный список статусов (code, name)."""
     return _get_cached('status_choices', lambda: Status.objects.only('code', 'name'))
 
 def get_cached_categories():
+    """Получить закэшированный список категорий (code, name)."""
     return _get_cached('category_choices', lambda: Category.objects.only('code', 'name'))
 
 def get_cached_locations():
+    """Получить закэшированный список локаций (code, name)."""
     return _get_cached('location_choices', lambda: OrganizationLocation.objects.only('code', 'name'))
 
 
+# ———————————— Role Helpers ————————————
 def _has_role(user, role_code):
-    """Удобный чек на роль через профиль."""
+    """
+    Проверить наличие конкретной роли у пользователя через профиль.
+    """
     profile = getattr(user, 'profile', None)
     return profile and profile.role.code == role_code
 
-
-# ———————— Auth Views ————————
+# ———————————— Auth Views ————————————
 def login_view(request):
+    """
+    Обработка входа пользователя с поддержкой 'запомнить меня' и редиректом по ролям.
+    """
     form = LoginForm(request.POST or None)
 
     if request.method == 'POST':
@@ -49,26 +91,34 @@ def login_view(request):
         remember = request.POST.get('remember')
 
         user = authenticate(request, username=username, password=password)
-        if user:
-                    login(request, user)
-                    request.session.set_expiry(24 * 60 * 60 if remember else 0)
-                    
-                    if user.is_superuser or _has_role(user, 'admin'):
-                        return redirect('/admin/')
-
-                    return redirect('request_list')
+        
+        if user is not None:
+            login(request, user)
+            # Установка времени жизни сессии (1 день если "запомнить меня")
+            request.session.set_expiry(24 * 60 * 60 if remember else 0)
+            
+            # Редирект для админов и обычных пользователей
+            if user.is_superuser or _has_role(user, 'admin'):
+                return redirect('/admin/')
+            return redirect('request_list')
+        
         messages.error(request, "Неверный логин или пароль")
 
     return render(request, 'registration/login.html', {'form': form})
 
 @login_required
 def custom_logout_view(request):
+    """
+    Выход пользователя с последующим редиректом на страницу входа.
+    """
     logout(request)
     return redirect('login')
 
-
 @login_required
 def redirect_after_login_view(request):
+    """
+    Унифицированный редирект после входа в зависимости от роли пользователя.
+    """
     user = request.user
     if user.is_superuser or _has_role(user, 'admin'):
         return redirect('/admin/')
@@ -76,28 +126,6 @@ def redirect_after_login_view(request):
 
 
 # ———————— CRUD для Request ————————
-import json
-
-from django.contrib.auth.decorators import login_required
-from django.db import transaction
-from django.http import (
-    JsonResponse,
-    HttpResponseBadRequest,
-    HttpResponseForbidden,
-)
-from django.shortcuts import get_object_or_404, render
-from django.views.decorators.http import require_POST
-
-from core.models import (
-    Request,
-    Profile,
-    Status,
-    OrganizationLocation,
-    Category,
-)
-from django.utils.decorators import decorator_from_middleware
-from django.middleware.csrf import CsrfViewMiddleware
-
 csrfmiddlewareexempt = decorator_from_middleware(CsrfViewMiddleware)
 
 @login_required
@@ -134,13 +162,6 @@ def request_list_view(request):
         'profile': profile,
         'responsibles': responsibles,
     })
-
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_POST
-import json
-
-from .models import Request, Status, User
 
 @csrf_exempt
 @require_POST
@@ -388,14 +409,6 @@ def request_update_view(request, pk=None):
         'is_duplicate': 'original_pk' in request.GET,
         'show_lifting_fields': show_lifting,
     })
-
-from django.shortcuts import render, get_object_or_404, redirect
-from django.contrib.auth.decorators import login_required
-from django.http import HttpResponseForbidden
-from django.contrib import messages
-
-from .models import Request, Status, Category, Profile
-from .forms import RequestForm
 
 @login_required
 def request_double(request, pk):
