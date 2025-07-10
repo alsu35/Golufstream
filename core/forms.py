@@ -69,14 +69,28 @@ class RequestForm(forms.ModelForm):
             'time_start': forms.TimeInput(attrs={'type': 'time'}),
             'time_end': forms.TimeInput(attrs={'type': 'time'}),
             'comment': forms.Textarea(attrs={'rows': 3}),
+            'equipment_category': forms.Select(attrs={
+                'class': 'form-select',
+            }),
         }
 
-    def __init__(self, *args, **kwargs):
-        self.user = kwargs.pop('user', None)
+    def __init__(self, *args, user=None, **kwargs):
+        """
+        Скрываем поле status, если пользователь не operator/admin/superuser.
+        """
         super().__init__(*args, **kwargs)
+        self.user = user
 
-        # Администратор видит статус, остальные нет
-        if self.user and not self.user.is_superuser and getattr(self.user, 'profile', None).role.code != 'admin':
+        # Проверяем роль
+        is_power = (
+            user and (
+                user.is_superuser
+                or getattr(user, 'profile', None) and user.profile.role.code in ('admin', 'operator')
+            )
+        )
+
+        if not is_power:
+            # Убираем поле из формы и не делаем его required
             self.fields.pop('status', None)
 
         # Автоустановка initial для локации у заказчика
@@ -85,26 +99,23 @@ class RequestForm(forms.ModelForm):
             self.fields['location'].initial = loc
             self.fields['location'].widget.attrs['readonly'] = True
 
-        # Управление обязательностью полей для 'lifting'
-        code = None
-        if self.instance and self.instance.equipment_category:
-            code = self.instance.equipment_category.code
-        elif 'equipment_category' in self.data:
-            try:
-                category_id = int(self.data['equipment_category'])
-                category = Category.objects.get(id=category_id)
-                code = category.code
-            except (ValueError, Category.DoesNotExist):
-                code = None
-
-        # Устанавливаем обязательность полей
-        for field in ['responsible_certificate', 'rigger_name', 'rigger_certificates']:
-            self.fields[field].required = (code == 'lifting')
-
     def clean(self):
         cleaned = super().clean()
-        # Дополнительная логика валидации, если нужно
         return cleaned
+    
+    def save(self, commit=True):
+        """
+        Если поле status отсутствует — проставляем дефолтный 'new'.
+        """
+        obj = super().save(commit=False)
+
+        # Если в форме нет status (пользователь не operator/admin)
+        if 'status' not in self.cleaned_data:
+            obj.status = Status.objects.get(code='new')
+
+        if commit:
+            obj.save()
+        return obj
     
 class LoginForm(forms.Form):
     username = forms.CharField(label='Логин', max_length=150)

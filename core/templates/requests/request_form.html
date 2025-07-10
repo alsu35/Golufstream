@@ -18,7 +18,6 @@
     <!-- Иконки -->
     {% load static %}
     <link rel="icon" href="{% static 'img/favicon.png' %}" type="image/png" />
-    <link rel="shortcut icon" href="{% static 'img/favicon.ico' %}" type="image/x-icon" />
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
 
     <style>
@@ -63,15 +62,7 @@
             margin-bottom: 0;
         }
 
-        input#id_work_object,
-        input#id_work_type,
-        input.form-control,
-        input#id_date_start,
-        input#id_date_end,
-        input#id_time_start,
-        input#id_time_end,
-        input#id_transport_type,
-        input#id_break_time,
+        input,
         select,
         textarea {
             border-radius: 8px;
@@ -81,6 +72,10 @@
             height: 40px;
             width: 100%;
             padding: 6px 12px;
+        }
+
+        input#id_is_completed_fact{
+            padding: 0 !important;
         }
 
         select {
@@ -424,15 +419,28 @@
 
                         <!-- Категория техники -->
                         <div class="col-md-6">
-                            <label for="{{ form.equipment_category.id_for_label }}" class="form-label">Категория
-                                техники<span class="star">*</span></label>
-                            {{ form.equipment_category }} 
-                            {% if form.equipment_category.errors %}
+                        {{ form.equipment_category.label_tag }}
+                        {{ form.equipment_category }}
+                        {% if form.equipment_category.errors %}
                             <div class="invalid-feedback d-block">
-                                {{ form.equipment_category.errors.as_text }}
+                            {{ form.equipment_category.errors.as_text }}
+                            </div>
+                        {% endif %}
+                        </div>
+
+                        <!-- Статус заявки (только если поле есть в форме) -->
+                        {% if form.status %}
+                        <div class="col-md-6">
+                            {{ form.status.label_tag }}
+                            {{ form.status }}
+                            {% if form.status.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.status.errors.as_text }}
                             </div>
                             {% endif %}
                         </div>
+                        {% endif %}
+
                     </div>
                 </div>
 
@@ -585,7 +593,7 @@
                 </div>
 
                 <!-- Подъемные сооружения -->
-                <div class="col-md-6 form-section lifting-fields" id="liftingFields" style="display: none">
+                <div class="col-md-6 form-section lifting-fields" id="liftingFields"  style="display: none;">
                     <h6>Дополнительная информация для подъемных сооружений</h6>
                     <div class="row g-3">
                         <!-- Номер удостоверения ответственного -->
@@ -654,6 +662,7 @@
     <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ru.js"></script>
 
     <script>
+        // Добавляет на страницу новую строку перерыва с заданным временем начала и конца.
         function addBreakPeriod(start = "", end = "") {
             const container = document.getElementById("break-periods-container");
 
@@ -669,22 +678,6 @@
 
             container.appendChild(row);
         }
-
-        // Инициализация
-        document.addEventListener('DOMContentLoaded', function () {
-            let existing = [];
-            try {
-                const raw = document.getElementById('id_break_periods').value;
-                if (raw) existing = JSON.parse(raw); // ["03:30-03:04", "16:30-16:00"]
-            } catch (e) {}
-
-            existing.forEach(str => {
-                if (typeof str === "string" && str.includes("-")) {
-                    const [start, end] = str.split("-");
-                    addBreakPeriod(start, end);
-                }
-            });
-        });
 
         // Добавить новую строку
         document.getElementById('add-break-btn')
@@ -708,8 +701,7 @@
             document.getElementById('id_break_periods').value = JSON.stringify(out);
         });
 
-        const liftingCode = "{{ lifting_category_id|default:'' }}";
-
+        // Считывает из скрытого <input id="id_break_periods"> JSON-массив перерывов и инициализирует их на форме.
         function initDatepickers() {
             // flatpickr для дат
             const datePickerConfig = {
@@ -743,58 +735,92 @@
             });
         }
         
-        function toggleLiftingFields() {
-            const categoryId = $("#{{ form.equipment_category.id_for_label }}").val();
-            const isLifting = categoryId === liftingCode;
+        // // Показывает или скрывает блок полей для подъёмных сооружений
+        // //  в зависимости от выбранной категории техники.
+        // function toggleLiftingFields() {
+        //     const categorySelect = document.getElementById('id_equipment_category');
+        //     const selectedOption = categorySelect.options[categorySelect.selectedIndex];
+        //     const categoryCode = selectedOption?.dataset?.code || '';
+            
+        //     const liftingBlock = document.getElementById('liftingFields');
+        //     const liftingInputs = liftingBlock.querySelectorAll('input, textarea');
+        //     const liftingStars = liftingBlock.querySelectorAll('.star');
 
-            const liftingFields = $("#liftingFields");
-            const requiredStars = liftingFields.find(".star");
+        //     if (categoryCode === LIFTING_CODE) {
+        //         // Показываем блок
+        //         liftingBlock.style.display = 'block';
+                
+        //         // Делаем поля обязательными
+        //         liftingInputs.forEach(input => {
+        //             input.required = true;
+        //             input.classList.remove('is-invalid');
+        //         });
+                
+        //         // Показываем звездочки обязательности
+        //         liftingStars.forEach(star => star.style.display = 'inline');
+        //     } else {
+        //         // Скрываем блок
+        //         liftingBlock.style.display = 'none';
+                
+        //         // Снимаем обязательность и очищаем поля
+        //         liftingInputs.forEach(input => {
+        //             input.required = false;
+        //             input.value = '';
+        //             input.classList.remove('is-invalid');
+        //         });
+                
+        //         // Скрываем звездочки обязательности
+        //         liftingStars.forEach(star => star.style.display = 'none');
+        //     }
+        // }
 
-            if (isLifting) {
-                liftingFields.slideDown();
-                liftingFields.find("input, textarea").prop("required", true);
-                requiredStars.show();
-            } else {
-                liftingFields.slideUp();
-                liftingFields.find("input, textarea").prop("required", false).val("");
-                requiredStars.hide();
-            }
-        }
-        
-        function initLiftingFields() {
-            // Принудительно запускаем переключение при загрузке
-            toggleLiftingFields();
+        // // Привязываем обработчик изменения категории
+        // function initLiftingFields() {
+        //     const categorySelect = document.getElementById('id_equipment_category');
+        //     if (categorySelect) {
+        //         categorySelect.addEventListener('change', toggleLiftingFields);
+                
+        //         // Инициализируем начальное состояние
+        //         toggleLiftingFields();
+        //     }
 
-            // Обработчик изменения категории
-            $("#{{ form.equipment_category.id_for_label }}").on("change", function () {
-                toggleLiftingFields();
-            });
+        //     // Валидация при отправке формы
+        //     const form = document.querySelector('form');
+        //     if (form) {
+        //         form.addEventListener('submit', function(e) {
+        //             const categorySelect = document.getElementById('id_equipment_category');
+        //             const selectedOption = categorySelect.options[categorySelect.selectedIndex];
+        //             const categoryCode = selectedOption?.dataset?.code || '';
+                    
+        //             if (categoryCode === LIFTING_CODE) {
+        //                 let isValid = true;
+        //                 const liftingInputs = document.querySelectorAll('#liftingFields input, #liftingFields textarea');
+                        
+        //                 liftingInputs.forEach(input => {
+        //                     if (!input.value.trim()) {
+        //                         input.classList.add('is-invalid');
+        //                         isValid = false;
+        //                     } else {
+        //                         input.classList.remove('is-invalid');
+        //                     }
+        //                 });
+                        
+        //                 if (!isValid) {
+        //                     e.preventDefault();
+        //                     // Прокручиваем к первому невалидному полю
+        //                     const firstInvalid = document.querySelector('#liftingFields .is-invalid');
+        //                     if (firstInvalid) {
+        //                         firstInvalid.scrollIntoView({behavior: 'smooth', block: 'center'});
+        //                     }
+        //                     return false;
+        //                 }
+        //             }
+        //             return true;
+        //         });
+        //     }
+        // }
 
-            // Обработчик отправки формы
-            $("form").on("submit", function () {
-                const category = $("#{{ form.equipment_category.id_for_label }}").val();
-                const liftingFields = $("#liftingFields");
-                const requiredStars = liftingFields.find(".star");
-
-                if (category === "lifting") {
-                    let isValid = true;
-                    liftingFields.find("input, textarea").each(function () {
-                        if (!$(this).val()) {
-                            $(this).addClass("is-invalid");
-                            isValid = false;
-                        } else {
-                            $(this).removeClass("is-invalid");
-                        }
-                    });
-                    return isValid;
-                } else {
-                    liftingFields.find("input, textarea").removeClass("is-invalid");
-                }
-
-                return true;
-            });
-        }
-
+        // Настраивает отображение для поля «ответственный» с кастомным шаблоном
         function formatResponsible(option) {
             if (!option.id) {
             return option.text; 
@@ -847,12 +873,51 @@
             }
             });
         });
-        document.addEventListener("DOMContentLoaded", function () {
+
+        document.addEventListener("DOMContentLoaded", function () {            
+            // Код категории, при которой показываем блок «Подъемные сооружения»
+            const LIFTING_CODE = 'lifting';
+            
+            // Функция для показа/скрытия блока
+            function toggleLiftingFields() {
+                const categorySelect = document.getElementById('id_equipment_category');
+                const liftingBlock = document.getElementById('liftingFields');
+                
+                if (!categorySelect || !liftingBlock) return;
+                
+                // Получаем выбранную категорию
+                const selectedOption = categorySelect.options[categorySelect.selectedIndex];
+                const categoryCode = selectedOption?.dataset?.code || '';
+                
+                // Показываем/скрываем блок в зависимости от выбранной категории
+                liftingBlock.style.display = (categoryCode === LIFTING_CODE) ? 'block' : 'none';
+            }
+
+            // Инициализация
+            const categorySelect = document.getElementById('id_equipment_category');
+            if (categorySelect) {
+                // Вешаем обработчик изменения категории
+                categorySelect.addEventListener('change', toggleLiftingFields);
+                // Вызываем сразу для установки начального состояния
+                toggleLiftingFields();
+            }
+
+            let existing = [];
+            try {
+                const raw = document.getElementById('id_break_periods').value;
+                if (raw) existing = JSON.parse(raw); // ["03:30-03:04", "16:30-16:00"]
+            } catch (e) {}
+
+            existing.forEach(str => {
+                if (typeof str === "string" && str.includes("-")) {
+                    const [start, end] = str.split("-");
+                    addBreakPeriod(start, end);
+                }
+            });
             initBreakPeriods();
             initSelect2();
             initDatepickers();
             initLiftingFields();
-            toggleLiftingFields();
         });
     </script>
 </body>

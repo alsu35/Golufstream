@@ -219,52 +219,64 @@ def request_create_view(request):
         role__code__in=['operator', 'admin']
     ).select_related('user')
 
-
-    if not any([user.is_superuser, _has_role(user, 'admin'), _has_role(user, 'operator'), _has_role(user, 'customer')]):
+    # Проверка прав
+    if not any([user.is_superuser,
+                _has_role(user, 'admin'),
+                _has_role(user, 'operator'),
+                _has_role(user, 'customer')]):
         return HttpResponseForbidden("Нет прав на создание заявки")
 
+    show_lifting = False  # дефолт
+
     if request.method == 'POST':
-        form = RequestForm(request.POST)
+        form = RequestForm(request.POST, user=user)
+        # Если форма прошла валидацию, сразу сохраняем
         if form.is_valid():
             req = form.save(commit=False)
             if not profile:
                 return HttpResponseForbidden("Профиль не найден")
-            
+
             req.customer = profile
             req.location = profile.location
-            
-            # Очищаем поля для подъемных сооружений, если категория не "lifting"
-            if not req.equipment_category or req.equipment_category.code != 'lifting':
+
+            # Если не lifting — очищаем доп. поля
+            if req.equipment_category.code != 'lifting':
                 req.responsible_certificate = None
                 req.rigger_name = None
                 req.rigger_certificates = None
-            
+
             try:
                 req.status = Status.objects.get(code='new')
             except Status.DoesNotExist:
                 return HttpResponseServerError("Статус 'new' не найден")
-            
+
             req.save()
             return redirect('request_list')
-        else:
-            return render(request, 'requests/request_form.html', {
-                'form': form,
-                'show_lifting_fields': req.equipment_category and req.equipment_category.code == 'lifting'
-            })
+
+        # Форма невалидна — определяем, показывать ли lifting-поля
+        # вариант A: из form.data (POST-данных)
+        cat_id = request.POST.get('equipment_category')
+        if cat_id:
+            try:
+                from .models import Category
+                cat = Category.objects.get(pk=cat_id)
+                show_lifting = (cat.code == 'lifting')
+            except Category.DoesNotExist:
+                show_lifting = False
 
     else:
+        # GET
         initial_data = {}
         if profile:
             initial_data['location'] = profile.location_id
-        
-        form = RequestForm(initial=initial_data)
-        
+        form = RequestForm(initial=initial_data, user=user)
+        # readonly для локации
         if profile:
             form.fields['location'].widget.attrs['readonly'] = True
 
     return render(request, 'requests/request_form.html', {
         'form': form,
-        'show_lifting_fields': False,
+        'show_lifting_fields': show_lifting,
         'responsibles': responsibles,
         'profile': profile,
     })
@@ -302,87 +314,99 @@ def request_cancel_view(request, pk):
 def request_update_view(request, pk=None):
     user = request.user
     profile = getattr(user, 'profile', None)
-    
-    # Получаем список ответственных
+
+    # responsables…
     responsibles = Profile.objects.filter(
         location=profile.location
-    ).exclude(
-        role__code__in=['operator', 'admin']
-    ).select_related('user')
+    ).exclude(role__code__in=['operator', 'admin']).select_related('user')
 
-    if not any([user.is_superuser, _has_role(user, 'admin'), _has_role(user, 'operator'), _has_role(user, 'customer')]):
+    # проверка прав
+    if not any([user.is_superuser,
+                _has_role(user, 'admin'),
+                _has_role(user, 'operator'),
+                _has_role(user, 'customer')]):
         return HttpResponseForbidden("Нет прав на редактирование")
 
-    # Для новой заявки (дубликата) pk будет None
+    # получаем request
+    req = None
     if pk:
-        req = get_object_or_404(
-            Request.objects.select_related(
-                'customer', 'location', 'status', 'customer__department__organization'
-            ),
-            pk=pk
-        )
-    else:
-        req = None
+        req = get_object_or_404(Request.objects.select_related(
+            'customer', 'location', 'status', 'customer__department__organization'
+        ), pk=pk)
 
-    # Проверка прав доступа для существующей заявки
-    if req and _has_role(user, 'operator') and req.location != profile.location:
-        return HttpResponseForbidden("Можно редактировать только по своей локации")
-    
-    if req and _has_role(user, 'customer') and (req.customer != profile or req.status.code == 'work'):
-        return HttpResponseForbidden("Нет прав на редактирование этой заявки")
+        # оператор может только по своей локации
+        if _has_role(user, 'operator') and req.location != profile.location:
+            return HttpResponseForbidden("Можно редактировать только по своей локации")
 
+        # customer: только свои заявки и не в работе
+        if _has_role(user, 'customer') and (req.customer != profile or req.status.code == 'work'):
+            return HttpResponseForbidden("Нет прав на редактирование этой заявки")
+
+    # работа с формой
     if request.method == 'POST':
         form = RequestForm(request.POST, instance=req, user=user)
         if form.is_valid():
             new_req = form.save(commit=False)
             new_req.customer = profile
+            # сохраняем
             new_req.save()
             messages.success(request, 'Заявка успешно сохранена')
             return redirect('request_detail', pk=new_req.pk)
-        
-        messages.error(request, 'Проверьте корректность полей')
-    else:
-        if req:
-            form = RequestForm(instance=req, user=user)
         else:
-            # Это случай, когда мы создаем новую заявку (не дублирование)
-            form = RequestForm(user=user)
+            messages.error(request, 'Проверьте корректность полей')
 
-    # Ограничение прав для заказчика
-    if _has_role(user, 'customer'):
-        form.fields.pop('status', None)
-        for f in list(form.fields):
-            if f not in ('is_completed_fact', 'comment'):
-                form.fields[f].widget.attrs['readonly'] = True
-                form.fields[f].required = False
+        # для невалидного POST определяем lifting из POST
+        cat_id = request.POST.get('equipment_category')
+    else:
+        # GET
+        form = RequestForm(instance=req, user=user) if req else RequestForm(user=user)
+        # для customer делаем readonly…
+        if _has_role(user, 'customer'):
+            form.fields.pop('status', None)
+            for fname in list(form.fields):
+                if fname not in ('is_completed_fact', 'comment'):
+                    form.fields[fname].widget.attrs['readonly'] = True
+                    form.fields[fname].required = False
 
-    # Получаем ID категории "lifting"
-    try:
-        lifting_category = Category.objects.get(code='lifting')
-        lifting_category_id = lifting_category.id
-    except Category.DoesNotExist:
-        lifting_category_id = ''
+        # для GET берем категорию из instance
+        cat_id = req.equipment_category_id if req else None
+
+    # вычисляем, показывать ли lifting-поля
+    show_lifting = False
+    if cat_id:
+        try:
+            cat = Category.objects.get(pk=cat_id)
+            show_lifting = (cat.code == 'lifting')
+        except Category.DoesNotExist:
+            show_lifting = False
 
     return render(request, 'requests/request_form.html', {
         'form': form,
-        'update': bool(req),  # False для новой заявки
+        'update': bool(req),
         'responsibles': responsibles,
         'profile': profile,
-        'is_duplicate': 'original_pk' in request.GET,  # Флаг дублирования
-        'lifting_category_id': lifting_category_id,
+        'is_duplicate': 'original_pk' in request.GET,
+        'show_lifting_fields': show_lifting,
     })
+
+from django.shortcuts import render, get_object_or_404, redirect
+from django.contrib.auth.decorators import login_required
+from django.http import HttpResponseForbidden
+from django.contrib import messages
+
+from .models import Request, Status, Category, Profile
+from .forms import RequestForm
 
 @login_required
 def request_double(request, pk):
-    """Создает черновик заявки и открывает форму редактирования"""
+    """Создаёт дубликат (черновик) заявки и обрабатывает его сохранение."""
     original = get_object_or_404(Request, pk=pk)
     user = request.user
     profile = getattr(user, 'profile', None)
-
     if not profile:
         return HttpResponseForbidden("Нет профиля")
 
-    # Создаем черновик без сохранения в БД
+    # Готовим начальный объект (без сохранения в БД)
     duplicate = Request(
         location=original.location,
         date_start=original.date_start,
@@ -400,21 +424,43 @@ def request_double(request, pk):
         rigger_name=original.rigger_name,
         rigger_certificates=original.rigger_certificates,
         customer=profile,
-        is_completed_fact=original.is_completed_fact, 
+        is_completed_fact=original.is_completed_fact,
     )
+    # дефолтный статус
+    duplicate.status = Status.objects.filter(code="new").first()
 
-    try:
-        duplicate.status = Status.objects.get(code="new")
-    except Status.DoesNotExist:
-        pass
-
-    form = RequestForm(instance=duplicate, user=user)
-
+    # подготовка списка ответственных (для выпадашки)
     responsibles = Profile.objects.filter(
         location=profile.location
-    ).exclude(
-        role__code__in=['operator', 'admin']
-    ).select_related('user')
+    ).exclude(role__code__in=['operator', 'admin']).select_related('user')
+
+    if request.method == 'POST':
+        # принимаем данные и валидируем
+        form = RequestForm(request.POST, instance=duplicate, user=user)
+        if form.is_valid():
+            new_req = form.save(commit=False)
+            new_req.customer = profile
+            # статус уже задан в форме.save()
+            new_req.save()
+            messages.success(request, "Дубликат заявки успешно сохранён")
+            return redirect('request_detail', pk=new_req.pk)
+        else:
+            messages.error(request, "Проверьте правильность заполнения полей")
+        # для невалидного POST нужно определить, показывать ли lifting‑блок
+        cat_id = request.POST.get('equipment_category')
+    else:
+        # GET: просто показываем форму с начальным экземпляром
+        form = RequestForm(instance=duplicate, user=user)
+        # lifting‑блок по instance
+        cat_id = duplicate.equipment_category_id
+
+    # включаем/выключаем поля для категории lifting
+    show_lifting = False
+    if cat_id:
+        try:
+            show_lifting = (Category.objects.get(pk=cat_id).code == 'lifting')
+        except Category.DoesNotExist:
+            pass
 
     return render(request, 'requests/request_form.html', {
         'form': form,
@@ -423,6 +469,7 @@ def request_double(request, pk):
         'responsibles': responsibles,
         'profile': profile,
         'duplicated': True,
+        'show_lifting_fields': show_lifting,
     })
 
 # ———————— Ошибки ————————
