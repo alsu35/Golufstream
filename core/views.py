@@ -22,6 +22,9 @@ from django.utils.decorators import decorator_from_middleware
 from django.middleware.csrf import CsrfViewMiddleware
 from django.views.decorators.csrf import csrf_exempt
 from django.db.models import Q
+from django.core.exceptions import PermissionDenied
+import logging
+from django.core.exceptions import PermissionDenied
 
 # Формы
 from .forms import RequestForm, LoginForm
@@ -124,7 +127,6 @@ def redirect_after_login_view(request):
     if user.is_superuser or _has_role(user, 'admin'):
         return redirect('/admin/')
     return redirect('request_list')
-
 
 # ———————— CRUD для Request ————————
 csrfmiddlewareexempt = decorator_from_middleware(CsrfViewMiddleware)
@@ -236,19 +238,19 @@ def request_detail_view(request, pk):
     if _has_role(user, 'customer'):
         if req.customer == profile:
             return render(request, 'requests/request_detail.html', {'req': req})
-        return HttpResponseForbidden("Можно просматривать только свои заявки")
+        raise PermissionDenied("You can only view your applications")
 
     # сотрудник — заявки своей организации
     if _has_role(user, 'employee'):
         if req.customer.department.organization == profile.department.organization:
             return render(request, 'requests/request_detail.html', {'req': req})
-        return HttpResponseForbidden("Можно просматривать только заявки своей организации")
+        raise PermissionDenied("You can only view your organization's applications")
 
     # без профиля — как сотрудник
     if not profile:
         return render(request, 'requests/request_detail.html', {'req': req})
 
-    return HttpResponseForbidden("Нет прав на просмотр заявки")
+    raise PermissionDenied("No rights to view the application")
 
 @login_required
 def request_create_view(request):
@@ -278,7 +280,7 @@ def request_create_view(request):
         or (profile and profile.role.code in ('admin', 'operator', 'customer'))
     )
     if not allowed:
-        return HttpResponseForbidden("Нет прав на создание заявки")
+        raise PermissionDenied("No rights to create an application")
 
     show_lifting = False
 
@@ -352,13 +354,13 @@ def request_cancel_view(request, pk):
     user = request.user
     profile = getattr(user, 'profile', None)
     if not profile or profile.role.code not in ('operator', 'customer'):
-        return HttpResponseForbidden("Нет прав на отмену")
+        raise PermissionDenied("No cancellation rights")
 
     req = get_object_or_404(Request.objects.select_related('status'), pk=pk)
 
     # customer – только свои
     if profile.role.code == 'customer' and req.customer != profile:
-        return HttpResponseForbidden("Можно отменять только свои заявки")
+        raise PermissionDenied("You can only cancel your applications")
 
     if req.status.code == 'work':
         messages.error(request, "Нельзя отменить заявку в работе")
@@ -391,7 +393,7 @@ def request_update_view(request, pk=None):
                 _has_role(user, 'admin'),
                 _has_role(user, 'operator'),
                 _has_role(user, 'customer')]):
-        return HttpResponseForbidden("Нет прав на редактирование")
+        raise PermissionDenied("No editing rights")
 
     # получаем request
     req = None
@@ -402,11 +404,11 @@ def request_update_view(request, pk=None):
 
         # оператор может только по своей локации
         if _has_role(user, 'operator') and req.location != profile.location:
-            return HttpResponseForbidden("Можно редактировать только по своей локации")
+            raise PermissionDenied("You can edit only by your location")
 
         # customer: только свои заявки и не в работе
         if _has_role(user, 'customer') and (req.customer != profile or req.status.code == 'work'):
-            return HttpResponseForbidden("Нет прав на редактирование этой заявки")
+            raise PermissionDenied("No rights to edit this application")
 
     # работа с формой
     if request.method == 'POST':
@@ -429,8 +431,15 @@ def request_update_view(request, pk=None):
         # для customer делаем readonly…
         if _has_role(user, 'customer'):
             form.fields.pop('status', None)
+            editable = {
+                'is_completed_fact',
+                'comment',
+                'work_type',
+                'transport_type',
+                'work_object',
+            }
             for fname in list(form.fields):
-                if fname not in ('is_completed_fact', 'comment'):
+                if fname not in editable:
                     form.fields[fname].widget.attrs['readonly'] = True
                     form.fields[fname].required = False
 
@@ -463,7 +472,7 @@ def request_double(request, pk):
     user = request.user
     profile = getattr(user, 'profile', None)
     if not profile:
-        return HttpResponseForbidden("Нет профиля")
+        raise PermissionDenied("Нет профиля")
 
     # Готовим начальный объект (без сохранения в БД)
     duplicate = Request(
@@ -540,7 +549,13 @@ def custom_400(request, exception=None):
 def custom_401(request, exception=None):
     return render(request, 'errors/401.html', status=401)
 
+logger = logging.getLogger('django.request')
+
 def custom_403(request, exception=None):
+    # логируем URL и причину отказа
+    msg = f"403 Forbidden: path={request.path} user={request.user!r} reason={exception!r}"
+    logger.warning(msg)
+
     return render(request, 'errors/403.html', status=403)
 
 def custom_404(request, exception=None):

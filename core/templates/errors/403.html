@@ -42,7 +42,7 @@
         margin: 0 auto 2rem auto;
     }
 
-    .btn-home,
+    .btn-back,
     .btn-logout {
         background: linear-gradient(135deg, #8E3798, #574CA1, #4DA4CB);
         color: white;
@@ -56,8 +56,8 @@
         display: inline-block;
         margin: 1rem auto 0;
     }
-
-    .btn-home:hover,
+    
+    .btn-back:hover,
     .btn-logout:hover {
         opacity: 0.9;
         transform: translateY(-2px);
@@ -92,6 +92,7 @@
         <a href="{% url 'logout' %}" class="btn-logout">
             Выйти из аккаунта
         </a>
+        <a href="{% url 'request_list' %}" class="btn-back">← На главную</a>
     </div>
 </div>
 {% endblock %}
