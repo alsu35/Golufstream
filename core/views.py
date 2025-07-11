@@ -322,12 +322,12 @@ def request_create_view(request):
         req.location = profile.location
 
         # Статус new
-        try:
-            req.status = Status.objects.get(code='new')
-        except Status.DoesNotExist:
-            return HttpResponseServerError("Статус 'new' не найден")
+        if not req.status:  # Запасной вариант, если статус не выбран
+            req.status = Status.objects.filter(code='new').first()
+
 
         req.save()
+        messages.success(request, 'Заявка успешно создана')
         return redirect('request_list')
 
     else:
@@ -388,6 +388,11 @@ def request_update_view(request, pk=None):
         location=profile.location
     ).exclude(role__code__in=['operator', 'admin']).select_related('user')
 
+    customers = Profile.objects.filter(
+        location=profile.location,
+        role__code='customer'
+    ).select_related('user')
+
     # проверка прав
     if not any([user.is_superuser,
                 _has_role(user, 'admin'),
@@ -445,7 +450,7 @@ def request_update_view(request, pk=None):
 
         # для GET берем категорию из instance
         cat_id = req.equipment_category_id if req else None
-
+    
     # вычисляем, показывать ли lifting-поля
     show_lifting = False
     if cat_id:
@@ -459,6 +464,7 @@ def request_update_view(request, pk=None):
         'form': form,
         'update': bool(req),
         'responsibles': responsibles,
+        'customers': customers,
         'profile': profile,
         'is_duplicate': 'original_pk' in request.GET,
         'show_lifting_fields': show_lifting,
@@ -468,13 +474,22 @@ def request_update_view(request, pk=None):
 @login_required
 def request_double(request, pk):
     """Создаёт дубликат (черновик) заявки и обрабатывает его сохранение."""
-    original = get_object_or_404(Request, pk=pk)
+    original = get_object_or_404(Request.objects.select_related('customer'), pk=pk)
     user = request.user
     profile = getattr(user, 'profile', None)
+
     if not profile:
         raise PermissionDenied("Нет профиля")
 
-    # Готовим начальный объект (без сохранения в БД)
+    # Получаем список заказчиков (для оператора)
+    customers = None
+    if profile.role.code == 'operator':
+        customers = Profile.objects.filter(
+            role__code='customer',
+            department__organization=profile.department.organization
+        ).select_related('user').order_by('user__last_name')
+
+    # Создаем дубликат (без сохранения в БД)
     duplicate = Request(
         location=original.location,
         date_start=original.date_start,
@@ -491,39 +506,42 @@ def request_double(request, pk):
         responsible_certificate=original.responsible_certificate,
         rigger_name=original.rigger_name,
         rigger_certificates=original.rigger_certificates,
-        customer=profile,
+        customer=original.customer,  # Сохраняем оригинального заказчика
         is_completed_fact=original.is_completed_fact,
     )
-    # дефолтный статус
+
+    # Устанавливаем статус "новый"
     duplicate.status = Status.objects.filter(code="new").first()
 
-    # подготовка списка ответственных (для выпадашки)
+    # Получаем ответственных (для выпадающего списка)
     responsibles = Profile.objects.filter(
         location=profile.location
     ).exclude(role__code__in=['operator', 'admin']).select_related('user')
+
     categories = Category.objects.all()
 
     if request.method == 'POST':
-        # принимаем данные и валидируем
         form = RequestForm(request.POST, instance=duplicate, user=user)
         if form.is_valid():
             new_req = form.save(commit=False)
-            new_req.customer = profile
-            # статус уже задан в форме.save()
+            # Для оператора сохраняем выбранного заказчика, для других - оригинального
+            if profile.role.code == 'operator':
+                new_req.customer_id = request.POST.get('customer', original.customer_id)
+            else:
+                new_req.customer = profile
+            
             new_req.save()
             messages.success(request, "Дубликат заявки успешно сохранён")
             return redirect('request_detail', pk=new_req.pk)
         else:
             messages.error(request, "Проверьте правильность заполнения полей")
-        # для невалидного POST нужно определить, показывать ли lifting‑блок
+        
         cat_id = request.POST.get('equipment_category')
     else:
-        # GET: просто показываем форму с начальным экземпляром
         form = RequestForm(instance=duplicate, user=user)
-        # lifting‑блок по instance
         cat_id = duplicate.equipment_category_id
 
-    # включаем/выключаем поля для категории lifting
+    # Определяем, показывать ли блок для подъемных работ
     show_lifting = False
     if cat_id:
         try:
@@ -536,8 +554,8 @@ def request_double(request, pk):
         'is_duplicate': True,
         'original_pk': pk,
         'responsibles': responsibles,
+        'customers': customers,
         'profile': profile,
-        'duplicated': True,
         'show_lifting_fields': show_lifting,
         'categories': categories,
     })
