@@ -21,6 +21,7 @@ from django.db import transaction
 from django.utils.decorators import decorator_from_middleware
 from django.middleware.csrf import CsrfViewMiddleware
 from django.views.decorators.csrf import csrf_exempt
+from django.db.models import Q
 
 # Формы
 from .forms import RequestForm, LoginForm
@@ -133,7 +134,7 @@ def request_list_view(request):
     user = request.user
     profile = getattr(user, 'profile', None)
 
-    # Базовый QuerySet
+    # Базовый queryset
     qs = Request.objects.select_related(
         'status',
         'location',
@@ -142,9 +143,29 @@ def request_list_view(request):
         'responsible',
     )
 
-    if profile and profile.location:
-        qs = qs.filter(location=profile.location)
+    # --- Фильтрация по ролям ---
+    if profile:
+        role_code = profile.role.code
 
+        if role_code == 'customer':
+            # Только свои заявки (как заказчик)
+            qs = qs.filter(customer=profile)
+
+        elif role_code == 'employee':
+            # Где он ответственный или заявки по его организации и локации
+            qs = qs.filter(
+                Q(responsible=profile) |
+                Q(
+                    customer__department__organization=profile.department.organization,
+                    location=profile.location
+                )
+            )
+
+        elif role_code == 'operator':
+            # Все заявки по его локации
+            qs = qs.filter(location=profile.location)
+
+    # --- Ответственные (только для оператора) ---
     responsibles = None
     if profile and profile.role.code == 'operator' and profile.location:
         responsibles = Profile.objects.filter(
@@ -152,7 +173,6 @@ def request_list_view(request):
         ).exclude(
             role__code__in=['admin', 'operator']
         ).select_related('user')
-
 
     return render(request, 'requests/request_list.html', {
         'requests': qs,
@@ -234,11 +254,27 @@ def request_detail_view(request, pk):
 def request_create_view(request):
     user = request.user
     profile = getattr(user, 'profile', None)
-    responsibles = Profile.objects.filter(
-        location=profile.location
-    ).exclude(
-        role__code__in=['operator', 'admin']
+
+    customers = Profile.objects.filter(
+        location=profile.location,
+        role__code='customer'
     ).select_related('user')
+
+    if _has_role(user, 'customer'):
+        # заказчик видит только из своей организации
+        responsibles = Profile.objects.filter(
+            department__organization=profile.department.organization,
+            location=profile.location
+        ).exclude(
+            role__code__in=['operator', 'admin']
+        ).select_related('user')
+    else:
+        responsibles = Profile.objects.filter(
+            location=profile.location
+        ).exclude(
+            role__code__in=['operator', 'admin']
+        ).select_related('user')
+
 
     # Проверка прав
     if not any([user.is_superuser,
@@ -257,7 +293,8 @@ def request_create_view(request):
             if not profile:
                 return HttpResponseForbidden("Профиль не найден")
 
-            req.customer = profile
+            if not _has_role(user, 'operator'):
+                req.customer = profile  # для всех, кроме оператора
             req.location = profile.location
 
             # Если не lifting — очищаем доп. поля
@@ -299,6 +336,7 @@ def request_create_view(request):
         'form': form,
         'show_lifting_fields': show_lifting,
         'responsibles': responsibles,
+        'customers': customers,
         'profile': profile,
     })
 

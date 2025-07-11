@@ -487,6 +487,8 @@
                 {% if profile %}
                 <p class="mb-0 fw-bold text-center fio">{{ profile.full_name }}</p>
                 {% endif %}
+                
+
             </div>
             <!-- Кнопки -->
             <div class="d-flex flex-column align-items-end gap-1">
@@ -749,211 +751,262 @@
     <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ru.js "></script>
 
     
-<!-- JS для фильтрации и inline‑редактирования -->
+    <!-- JS для фильтрации и inline‑редактирования -->
     <script>
-    $(document).ready(function () {
-        // 1) Инициализация календарей
-        const dateStartPicker = flatpickr("#dateStartFilter", {
-            locale: "ru",
-            dateFormat: "Y-m-d",
-            altFormat:   "d.m.Y",
-            altInput:    true,
-            allowInput:  true,
-            onChange:    filterRequests
-        });
-        const dateEndPicker = flatpickr("#dateEndFilter", {
-            locale: "ru",
-            dateFormat: "Y-m-d",
-            altFormat:   "d.m.Y",
-            altInput:    true,
-            allowInput:  true,
-            onChange:    filterRequests
-        });
+        $(document).ready(function () {
+        // ========================
+        // Инициализация переменных
+        // ========================
+        const $searchInput = $('#searchInput');
+        const $statusFilter = $('#statusFilter');
+        const $locationFilter = $('#locationFilter');
+        const $categoryFilter = $('#categoryFilter');
+        const $requestsTableBody = $('#requestsTable tbody');
 
-        // очистка полей
-        $("#clearDateFilter").on("click", function () {
-            // Очистка дат
+        let sortDirection = "desc";
+        let dateStartPicker, dateEndPicker;
+
+        // ========================
+        // Инициализация календарей
+        // ========================
+        function initDatePickers() {
+            const datePickerConfig = {
+                locale: "ru",
+                dateFormat: "Y-m-d",
+                altFormat: "d.m.Y",
+                altInput: true,
+                allowInput: true,
+                onChange: filterRequests
+            };
+
+            dateStartPicker = flatpickr("#dateStartFilter", {
+                ...datePickerConfig
+            });
+
+            dateEndPicker = flatpickr("#dateEndFilter", {
+                ...datePickerConfig
+            });
+        }
+
+        // ========================
+        // Очистка фильтров
+        // ========================
+        function resetFilters() {
+            // Очистка календарей
             dateStartPicker.clear();
             dateEndPicker.clear();
 
-            // Очистка текстового поиска
-            $("#searchInput").val("");
+            // Очистка поиска
+            $searchInput.val("");
 
-            // Сброс фильтров select
-            $("#statusFilter").val("");     
-            $("#locationFilter").val("");   
-            $("#categoryFilter").val("");   
+            // Сброс селектов
+            $statusFilter.val("");
+            $locationFilter.val("");
+            $categoryFilter.val("");
 
-            // Сброс сортировки (удалить визуальные метки)
+            // Сброс сортировки
             $(".sortable").removeClass("asc desc");
 
-            // Сброс порядка строк (если есть data-index)
-            const tbody = $("#requestsTable tbody");
-            const rows = tbody.find("tr").get();
-            rows.sort((a, b) => {
-                const aIndex = parseInt(a.getAttribute("data-index"));
-                const bIndex = parseInt(b.getAttribute("data-index"));
-                return aIndex - bIndex;
-            });
-            $.each(rows, (_, row) => tbody.append(row));
+            // Сброс порядка строк
+            const rows = $requestsTableBody.find("tr").get()
+                .sort((a, b) => {
+                    const aIndex = parseInt(a.getAttribute("data-index"));
+                    const bIndex = parseInt(b.getAttribute("data-index"));
+                    return aIndex - bIndex;
+                });
 
-            // Повторно применить фильтрацию
-            filterRequests?.();
-        });
+            rows.forEach(row => $requestsTableBody.append(row));
 
-        // 3) Сортировка по дате подачи
-        let sortDirection = "desc";
-        $("#sortDateHeader").on("click", function () {
-            const tbody = $("#requestsTable tbody");
-            const rows = tbody.find("tr").get();
+            // Повторная фильтрация
+            filterRequests();
+        }
 
-            sortDirection = sortDirection === "asc" ? "desc" : "asc";
-            $("#sortDateHeader").removeClass("asc desc").addClass(sortDirection);
+        // ========================
+        // Сортировка по дате
+        // ========================
+        function initSorting() {
+            $("#sortDateHeader").on("click", function () {
+                const rows = $requestsTableBody.find("tr").get();
 
-            rows.sort((a, b) => {
-                const aDate = new Date(a.getAttribute("created-at"));
-                const bDate = new Date(b.getAttribute("created-at"));
-                return sortDirection === "asc"
-                    ? aDate - bDate
-                    : bDate - aDate;
-            });
+                sortDirection = sortDirection === "asc" ? "desc" : "asc";
+                $(this).removeClass("asc desc").addClass(sortDirection);
 
-            $.each(rows, (_, row) => tbody.append(row));
-        });
+                rows.sort((a, b) => {
+                    const aDate = new Date(a.getAttribute("created-at"));
+                    const bDate = new Date(b.getAttribute("created-at"));
+                    return sortDirection === "asc" ? aDate - bDate : bDate - aDate;
+                });
 
-
-        // 4) Функция фильтрации
-        function filterRequests() {
-            const searchValue    = $("#searchInput").val().trim().toLowerCase();
-            const statusFilter   = $("#statusFilter").val();
-            const locationFilter = $("#locationFilter").val();
-            const categoryFilter = $("#categoryFilter").val();
-            const dateStart      = $("#dateStartFilter").val();
-            const dateEnd        = $("#dateEndFilter").val();
-
-            $("#requestsTable tbody tr").each(function() {
-                const row    = $(this),
-                    reqId  = String(row.data("id")),
-                    status = row.data("status"),
-                    loc    = row.data("location"),
-                    cat    = row.data("equipment-category"),
-                    cust   = row.data("customer")    || "",
-                    resp   = row.data("responsible")  || "",
-                    wt     = row.data("work-type")    || "",
-                    wo     = row.data("work-object")  || "",
-                    trt    = row.data("transport-type")|| "",
-                    dept   = row.data("department")   || "",
-                    rs     = row.data("date-start"),
-                    re     = row.data("date-end");
-
-                const textMatch = !searchValue
-                    || reqId.includes(searchValue)
-                    || wt.toLowerCase().includes(searchValue)
-                    || wo.toLowerCase().includes(searchValue)
-                    || trt.toLowerCase().includes(searchValue)
-                    || cust.includes(searchValue)
-                    || resp.includes(searchValue)
-                    || dept.includes(searchValue);
-
-                const statusMatch   = !statusFilter   || status   === statusFilter;
-                const locationMatch = !locationFilter || loc      === locationFilter;
-                const categoryMatch = !categoryFilter || cat      === categoryFilter;
-
-                let dateMatch = true;
-                if (dateStart || dateEnd) {
-                    dateMatch = !!rs && !!re
-                        && (!dateStart || rs >= dateStart)
-                        && (!dateEnd   || re <= dateEnd);
-                }
-
-                (textMatch && statusMatch && locationMatch && categoryMatch && dateMatch)
-                    ? row.show()
-                    : row.hide();
+                $.each(rows, (_, row) => $requestsTableBody.append(row));
             });
         }
 
-        // 5) События для фильтрации
-        $("#searchInput").on("input", filterRequests);
-        $("#statusFilter, #locationFilter, #categoryFilter").on("change", filterRequests);
+        // ========================
+        // Фильтрация заявок
+        // ========================
+        function filterRequests() {
+            const filters = {
+                search: $searchInput.val().trim().toLowerCase(),
+                status: $statusFilter.val(),
+                location: $locationFilter.val(),
+                category: $categoryFilter.val(),
+                dateStart: $("#dateStartFilter").val(),
+                dateEnd: $("#dateEndFilter").val()
+            };
 
-        // 6) Цвет статуса
+            $requestsTableBody.find("tr").each(function () {
+                const $row = $(this);
+                const data = {
+                    id: String($row.data("id")),
+                    status: $row.data("status"),
+                    location: $row.data("location"),
+                    category: $row.data("equipment-category"),
+                    customer: $row.data("customer") || "",
+                    responsible: $row.data("responsible") || "",
+                    workType: $row.data("work-type") || "",
+                    workObject: $row.data("work-object") || "",
+                    transportType: $row.data("transport-type") || "",
+                    department: $row.data("department") || "",
+                    dateStart: $row.data("date-start"),
+                    dateEnd: $row.data("date-end")
+                };
+
+                const matches = {
+                    text: !filters.search ||
+                        data.id.includes(filters.search) ||
+                        data.workType.toLowerCase().includes(filters.search) ||
+                        data.workObject.toLowerCase().includes(filters.search) ||
+                        data.transportType.toLowerCase().includes(filters.search) ||
+                        data.customer.includes(filters.search) ||
+                        data.responsible.includes(filters.search) ||
+                        data.department.includes(filters.search),
+
+                    status: !filters.status || data.status === filters.status,
+                    location: !filters.location || data.location === filters.location,
+                    category: !filters.category || data.category === filters.category,
+
+                    date: !filters.dateStart && !filters.dateEnd || (
+                        data.dateStart && data.dateEnd &&
+                        (!filters.dateStart || data.dateStart >= filters.dateStart) &&
+                        (!filters.dateEnd || data.dateEnd <= filters.dateEnd)
+                    )
+                };
+
+                $row.toggle(matches.text && matches.status && matches.location && matches.category && matches.date);
+            });
+
+            updateUrlParams();
+        }
+
+        // ========================
+        // Цвета статусов
+        // ========================
         function applyStatusColor($el) {
             $el.removeClass('status-new status-assigned status-work status-done status-cancel');
             const code = $el.data('code') || $el.find('option:selected').data('code');
-            if (code) {
-                $el.addClass(`status-${code}`);
+            if (code) $el.addClass(`status-${code}`);
+        }
+
+        // ========================
+        // Инициализация селектов ответственных
+        // ========================
+        function initResponsibleSelects() {
+            function formatResponsible(option) {
+                if (!option.id) return option.text;
+                const position = $(option.element).data('position') || '';
+                return $(`<div><div>${option.text}</div><small class="text-muted">${position}</small></div>`);
             }
-        }
 
-        // Инициализация цвета для всех change-status
-        $('.change-status, .status-badge.change-status').each(function(){
-            applyStatusColor($(this));
-        });
+            $('.change-responsible').select2({
+                theme: 'bootstrap-5',
+                placeholder: 'Выберите ответственного',
+                allowClear: false,
+                width: 'resolve',
+                templateResult: formatResponsible,
+                templateSelection: formatResponsible,
+                escapeMarkup: m => m
+            }).on("change", function () {
+                const $sel = $(this);
+                const requestId = $sel.data("id");
+                const responsibleId = $sel.val();
 
-        // Inline‑статус → цвет + AJAX
-        $('.change-status').filter('select').on('change', function(){
-            const $sel   = $(this),
-                id     = $sel.data("id"),
-                stId   = $sel.val(),
-                stCode = $sel.find('option:selected').data('code');
-
-            $sel.data('code', stCode);
-            applyStatusColor($sel);
-
-            fetch("{% url 'update_status' %}", {
-                method: "POST",
-                headers: {
-                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ request_id: id, status_id: stId })
-            })
-            .then(r => r.json())
-            .then(js => { if (!js.success) alert('Ошибка: ' + js.error); });
-        });
-
-        // 7) Inline‑ответственный → Select2 + AJAX
-        function formatResponsible(option) {
-            if (!option.id) return option.text;
-            const title    = option.text,
-                position = $(option.element).data('position') || '';
-            return $(`
-                <div>
-                    <div>${title}</div>
-                    <small class="text-muted">${position}</small>
-                </div>
-            `);
-        }
-
-        $('.change-responsible').select2({
-            theme: 'bootstrap-5',
-            placeholder: 'Выберите ответственного',
-            allowClear: false,
-            width: 'resolve',
-            templateResult:    formatResponsible,
-            templateSelection: formatResponsible,
-            escapeMarkup: m => m
-        }).on("change", function(){
-            const $sel         = $(this),
-                requestId    = $sel.data("id"),
-                responsibleId= $sel.val();
-
-            fetch("{% url 'update_responsible' %}", {
-                method: "POST",
-                headers: {
-                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    request_id:     requestId,
-                    responsible_id: responsibleId
+                fetch("{% url 'update_responsible' %}", {
+                    method: "POST",
+                    headers: {
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ request_id: requestId, responsible_id: responsibleId })
                 })
-            })
-            .then(r => r.json())
-            .then(js => { if (!js.success) alert('Ошибка: ' + js.error); });
-        });
+                .then(r => r.json())
+                .then(js => { if (!js.success) alert('Ошибка: ' + js.error); });
+            });
+        }
 
-    }); // Конец document.ready
+        // ========================
+        // Инициализация обработчиков событий
+        // ========================
+        function initEventListeners() {
+            // Очистка фильтров
+            $("#clearDateFilter").on("click", resetFilters);
+
+            // Поиск и фильтрация
+            $searchInput.on('input', () => { filterRequests(); updateUrlParams(); });
+            $('#statusFilter, #locationFilter, #categoryFilter').on('change', () => { 
+                filterRequests(); 
+                updateUrlParams(); 
+            });
+
+            // Добавление обработчиков изменения дат в существующие flatpickr
+            dateStartPicker.config.onChange.push(() => { filterRequests(); updateUrlParams(); });
+            dateEndPicker.config.onChange.push(() => { filterRequests(); updateUrlParams(); });
+        }
+
+        // ========================
+        // Инициализация статусов
+        // ========================
+        function initStatuses() {
+            $('.change-status, .status-badge.change-status').each(function () {
+                applyStatusColor($(this));
+            });
+
+            $('.change-status').filter('select').on('change', function () {
+                const $sel = $(this);
+                const id = $sel.data("id");
+                const stId = $sel.val();
+                const stCode = $sel.find('option:selected').data('code');
+
+                $sel.data('code', stCode);
+                applyStatusColor($sel);
+
+                fetch("{% url 'update_status' %}", {
+                    method: "POST",
+                    headers: {
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ request_id: id, status_id: stId })
+                })
+                .then(r => r.json())
+                .then(js => { if (!js.success) alert('Ошибка: ' + js.error); });
+            });
+        }
+
+        // ========================
+        // Инициализация приложения
+        // ========================
+        function init() {
+            initDatePickers();
+            initSorting();
+            initResponsibleSelects();
+            initStatuses();
+            initEventListeners();
+            filterRequests();
+        }
+
+        // Запуск инициализации
+        init();
+    });
     </script>
 
 </body>

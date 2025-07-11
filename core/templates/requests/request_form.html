@@ -285,9 +285,8 @@
             font-size: 1.2rem; 
             line-height:1; 
         }
-
-        .select2-selection__rendered {
-            margin-top: -30px;
+        .no-row-gap {
+            margin-top: 0 !important;
         }
         @media (max-width: 700px) {
             .responsive-cancel-btn .btn-text {
@@ -367,7 +366,7 @@
             {{ form.non_field_errors }} {{ form.errors }}
             
 
-            <div class="row card-row mb-3">
+            <div class="row card-row">
                 <!-- Основная информация -->
                 <div class="col-md-6 form-section">
                     <h6>Основная информация</h6>
@@ -508,8 +507,16 @@
                             </div>
                         </div>
 
+                        <!-- Блок под расчет часов -->
+                        <div class="col-12 mt-1">
+                            <p id="timeDifference" class="text-muted" style="font-size: calc(0.75rem + 0.1vw);">
+                                ⏱ Продолжительность: —
+                            </p>
+                        </div>
+
+
                         <!-- Перерывы -->
-                        <div class="col-12">
+                        <div class="col-12 no-row-gap">
                             <div class="d-flex justify-content-between align-items-center mb-2">
                                 <label for="id_break_periods" class="form-label mb-0">{{ form.break_periods.label }}</label>
                                 <button type="button" class="btn btn-outline-primary btn-sm" id="add-break-btn">
@@ -559,7 +566,7 @@
                 <div class="col-md-6 form-section">
                     <div class="row g-3">
                         <!-- Ответственный -->
-                        <div class="col-md-6 mb-3" style="width: 100%;">
+                        <div class="col-md-12">
                         <label for="id_responsible" class="form-label">
                             Ответственный<span class="star">*</span>
                         </label>
@@ -571,7 +578,7 @@
                             <option value="">—</option>
                             {% for p in responsibles %}
                             <option value="{{ p.id }}"
-                                    data-position="{{ p.position }}"
+                                    data-department="{% if profile and profile.role.code == 'operator' %}{{ p.department.organization.name }} — {{ p.department.name }}{% else %}{{ p.department.name }}{% endif %}"
                                     {% if form.instance.responsible_id == p.id %}selected{% endif %}>
                                 {{ p.full_name }}
                             </option>
@@ -583,9 +590,35 @@
                             </div>
                         {% endif %}
                         </div>
+                        {% if profile and profile.role.code == 'operator' %}
+                        <!-- Заказчик (для операторов) -->
+                        <div class="col-md-12">
+                            <label for="id_customer" class="form-label">
+                                Заказчик<span class="star">*</span>
+                            </label>
+                            <select id="id_customer"
+                                    name="customer"
+                                    class="form-select change-customer"
+                                    style="width:100%">
+                                <option value="">—</option>
+                                {% for p in customers %}
+                                <option value="{{ p.id }}"
+                                        data-department="{{ p.department}}"
+                                        {% if form.instance.customer_id == p.id %}selected{% endif %}>
+                                    {{ p.full_name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            {% if form.customer.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.customer.errors.as_text }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endif %}
                     </div>
                 </div>
-
+                
                 <!-- Комментарий -->
                 <div class="col-md-6 form-section">
                     <div class="row g-3">
@@ -647,7 +680,7 @@
             </div>
 
             <!-- Кнопки -->
-            <div class="d-flex justify-content-between align-items-center mt-4 pt-2">
+            <div class="d-flex justify-content-between align-items-center">
                 <a href="{% url 'request_list' %}" class="btn btn-outline-secondary">Отмена</a>
                 <button type="submit" class="btn btn-gradient">
                     <i class="bi bi-save"></i>
@@ -744,102 +777,17 @@
             });
         }
         
-        // // Показывает или скрывает блок полей для подъёмных сооружений
-        // //  в зависимости от выбранной категории техники.
-        // function toggleLiftingFields() {
-        //     const categorySelect = document.getElementById('id_equipment_category');
-        //     const selectedOption = categorySelect.options[categorySelect.selectedIndex];
-        //     const categoryCode = selectedOption?.dataset?.code || '';
-            
-        //     const liftingBlock = document.getElementById('liftingFields');
-        //     const liftingInputs = liftingBlock.querySelectorAll('input, textarea');
-        //     const liftingStars = liftingBlock.querySelectorAll('.star');
-
-        //     if (categoryCode === LIFTING_CODE) {
-        //         // Показываем блок
-        //         liftingBlock.style.display = 'block';
-                
-        //         // Делаем поля обязательными
-        //         liftingInputs.forEach(input => {
-        //             input.required = true;
-        //             input.classList.remove('is-invalid');
-        //         });
-                
-        //         // Показываем звездочки обязательности
-        //         liftingStars.forEach(star => star.style.display = 'inline');
-        //     } else {
-        //         // Скрываем блок
-        //         liftingBlock.style.display = 'none';
-                
-        //         // Снимаем обязательность и очищаем поля
-        //         liftingInputs.forEach(input => {
-        //             input.required = false;
-        //             input.value = '';
-        //             input.classList.remove('is-invalid');
-        //         });
-                
-        //         // Скрываем звездочки обязательности
-        //         liftingStars.forEach(star => star.style.display = 'none');
-        //     }
-        // }
-
-        // // Привязываем обработчик изменения категории
-        // function initLiftingFields() {
-        //     const categorySelect = document.getElementById('id_equipment_category');
-        //     if (categorySelect) {
-        //         categorySelect.addEventListener('change', toggleLiftingFields);
-                
-        //         // Инициализируем начальное состояние
-        //         toggleLiftingFields();
-        //     }
-
-        //     // Валидация при отправке формы
-        //     const form = document.querySelector('form');
-        //     if (form) {
-        //         form.addEventListener('submit', function(e) {
-        //             const categorySelect = document.getElementById('id_equipment_category');
-        //             const selectedOption = categorySelect.options[categorySelect.selectedIndex];
-        //             const categoryCode = selectedOption?.dataset?.code || '';
-                    
-        //             if (categoryCode === LIFTING_CODE) {
-        //                 let isValid = true;
-        //                 const liftingInputs = document.querySelectorAll('#liftingFields input, #liftingFields textarea');
-                        
-        //                 liftingInputs.forEach(input => {
-        //                     if (!input.value.trim()) {
-        //                         input.classList.add('is-invalid');
-        //                         isValid = false;
-        //                     } else {
-        //                         input.classList.remove('is-invalid');
-        //                     }
-        //                 });
-                        
-        //                 if (!isValid) {
-        //                     e.preventDefault();
-        //                     // Прокручиваем к первому невалидному полю
-        //                     const firstInvalid = document.querySelector('#liftingFields .is-invalid');
-        //                     if (firstInvalid) {
-        //                         firstInvalid.scrollIntoView({behavior: 'smooth', block: 'center'});
-        //                     }
-        //                     return false;
-        //                 }
-        //             }
-        //             return true;
-        //         });
-        //     }
-        // }
-
         // Настраивает отображение для поля «ответственный» с кастомным шаблоном
-        function formatResponsible(option) {
+        function formatPersonal(option) {
             if (!option.id) {
             return option.text; 
             }
-            const title    = option.text;
-            const position = $(option.element).data('position') || '';
+            const fullName    = option.text;
+            const department = $(option.element).data('department') || '';
             return $(`
             <div>
-                <div>${title}</div>
-                <small class="text-muted">${position}</small>
+                <div><strong>${department}</strong></div>
+                <small class="text-muted">${fullName}</small>
             </div>
             `);
         }
@@ -850,8 +798,18 @@
             placeholder: 'Выберите ответственного',
             allowClear: false,
             width: 'resolve',
-            templateResult: formatResponsible,
-            templateSelection: formatResponsible,
+            templateResult: formatPersonal,
+            templateSelection: formatPersonal,
+            escapeMarkup: m => m
+        });
+
+         // Select2 для заказчика
+        $('.change-customer').select2({
+            theme: 'bootstrap-5',
+            placeholder: 'Выберите заказчика',
+            width: 'resolve',
+            templateResult: formatPersonal,
+            templateSelection: formatPersonal,
             escapeMarkup: m => m
         });
 
@@ -883,7 +841,12 @@
             });
         });
 
-        document.addEventListener("DOMContentLoaded", function () {            
+        document.addEventListener("DOMContentLoaded", function () {           
+            // Глобальные ссылки на элементы времени
+            const startInput = document.getElementById("id_time_start");
+            const endInput = document.getElementById("id_time_end");
+            const output = document.getElementById("timeDifference"); 
+            
             // Код категории, при которой показываем блок «Подъемные сооружения»
             const LIFTING_CODE = 'lifting';
             
@@ -891,7 +854,10 @@
             function toggleLiftingFields() {
                 const categorySelect = document.getElementById('id_equipment_category');
                 const liftingBlock = document.getElementById('liftingFields');
-                
+                const startInput = document.getElementById("id_time_start");
+                const endInput = document.getElementById("id_time_end");
+                const output = document.getElementById("timeDifference");
+
                 if (!categorySelect || !liftingBlock) return;
                 
                 // Получаем выбранную категорию
@@ -900,6 +866,43 @@
                 
                 // Показываем/скрываем блок в зависимости от выбранной категории
                 liftingBlock.style.display = (categoryCode === LIFTING_CODE) ? 'block' : 'none';
+            }
+
+            function calculateTimeDifference() {
+                if (!startInput || !endInput || !output) return;
+
+                const start = startInput.value;
+                const end = endInput.value;
+
+                if (!start || !end) {
+                    output.textContent = "⏱ Продолжительность: —";
+                    return;
+                }
+
+                const [startH, startM] = start.split(":").map(Number);
+                const [endH, endM] = end.split(":").map(Number);
+
+                const startMinutes = startH * 60 + startM;
+                const endMinutes = endH * 60 + endM;
+
+                const diff = endMinutes - startMinutes;
+
+                if (diff <= 0) {
+                    output.textContent = "⏱ Время окончания должно быть позже начала";
+                    return;
+                }
+
+                const hours = Math.floor(diff / 60);
+                const minutes = diff % 60;
+
+                output.textContent = `⏱ Продолжительность: ${hours} ч ${minutes} мин`;
+            }
+
+            // События времени
+            if (startInput && endInput) {
+                startInput.addEventListener("change", calculateTimeDifference);
+                endInput.addEventListener("change", calculateTimeDifference);
+                calculateTimeDifference();
             }
 
             // Инициализация
