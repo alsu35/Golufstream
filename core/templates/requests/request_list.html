@@ -526,7 +526,7 @@
 
                 <!-- Фильтр по локации -->
                 {% if not profile or profile.role.code == 'employee' %}
-                <select id="locationFilter" class="form-select flex-grow-1" style="min-width: 150px;">
+                <select id="locationFilter" class="form-select flex-grow-1" >
                     <option value="">Все локации</option>
                     {% for location in locations %}
                     <option value="{{ location.code }}">{{ location.name }}</option>
@@ -550,13 +550,12 @@
                         style="max-width: 120px;" />
                     <input type="text" id="dateEndFilter" class="form-control" placeholder="До"
                         style="max-width: 120px;" />
-                    <button id="clearDateFilter" class="btn btn-clear-date btn-sm d-flex align-items-center gap-1">
+                    <button type="button" id="clearAllFilter" class="btn btn-clear-date btn-sm d-flex align-items-center gap-1">
                         <i class="bi bi-x-circle icon"></i>
                         <span class="text">Очистить</span>
                     </button>
                 </div>
             </div>
-
         </div>
 
 
@@ -791,34 +790,36 @@
         // ========================
         // Очистка фильтров
         // ========================
-        function resetFilters() {
-            // Очистка календарей
-            dateStartPicker.clear();
-            dateEndPicker.clear();
-
-            // Очистка поиска
-            $searchInput.val("");
-
-            // Сброс селектов
-            $statusFilter.val("");
-            $locationFilter.val("");
-            $categoryFilter.val("");
-
-            // Сброс сортировки
-            $(".sortable").removeClass("asc desc");
-
-            // Сброс порядка строк
-            const rows = $requestsTableBody.find("tr").get()
-                .sort((a, b) => {
-                    const aIndex = parseInt(a.getAttribute("data-index"));
-                    const bIndex = parseInt(b.getAttribute("data-index"));
-                    return aIndex - bIndex;
-                });
-
-            rows.forEach(row => $requestsTableBody.append(row));
-
-            // Повторная фильтрация
+        function clearAllFilters() {
+            // 1) Сброс текста поиска
+            $('#searchInput').val('');
+            // 2) Сброс селектов
+            $('#statusFilter').val('').trigger('change');
+            $('#locationFilter').val('').trigger('change');
+            $('#categoryFilter').val('').trigger('change');
+            // 3) Сброс дат
+            if (dateStartPicker) {
+                dateStartPicker.clear();
+            }
+            if (dateEndPicker) {
+                dateEndPicker.clear();
+            }
+            // 4) Сброс сортировки стрелки
+            $('#sortDateHeader').removeClass('asc desc');
+            sortDirection = 'desc';
+            // 5) Снова применяем фильтрацию (показываем все)
             filterRequests();
+        }
+
+        // Сброс порядка строк таблицы
+        function resetTableOrder() {
+            const rows = $requestsTableBody.find("tr").get();
+            rows.sort((a, b) => {
+                const aIndex = parseInt($(a).data('index') || 0);
+                const bIndex = parseInt($(b).data('index') || 0);
+                return aIndex - bIndex;
+            });
+            $requestsTableBody.empty().append(rows);
         }
 
         // ========================
@@ -841,6 +842,24 @@
             });
         }
 
+        function updateUrlParams() {
+            const filters = {
+                search: $searchInput.val(),
+                status: $statusFilter.val(),
+                location: $locationFilter.length ? $locationFilter.val() : null,
+                category: $categoryFilter.val(),
+                date_start: $("#dateStartFilter").val(),
+                date_end: $("#dateEndFilter").val()
+            };
+
+            const params = new URLSearchParams();
+            Object.entries(filters).forEach(([key, value]) => {
+                if (value) params.set(key, value);
+            });
+
+            const newUrl = `${window.location.pathname}?${params.toString()}`;
+            window.history.replaceState(null, '', newUrl);
+        }
         // ========================
         // Фильтрация заявок
         // ========================
@@ -948,18 +967,43 @@
         // ========================
         function initEventListeners() {
             // Очистка фильтров
-            $("#clearDateFilter").on("click", resetFilters);
+            $("#clearAllFilter")
+                .attr('type', 'button')     
+                .off('click')               
+                .on("click", function(e) {
+                    e.preventDefault();
+                    clearAllFilters();
+                });
 
             // Поиск и фильтрация
-            $searchInput.on('input', () => { filterRequests(); updateUrlParams(); });
-            $('#statusFilter, #locationFilter, #categoryFilter').on('change', () => { 
-                filterRequests(); 
-                updateUrlParams(); 
-            });
+            $searchInput
+                .off('input')
+                .on('input', () => {
+                    filterRequests();
+                    updateUrlParams();
+                });
+
+            $('#statusFilter, #locationFilter, #categoryFilter')
+                .off('change')
+                .on('change', () => {
+                    filterRequests();
+                    updateUrlParams();
+                });
 
             // Добавление обработчиков изменения дат в существующие flatpickr
-            dateStartPicker.config.onChange.push(() => { filterRequests(); updateUrlParams(); });
-            dateEndPicker.config.onChange.push(() => { filterRequests(); updateUrlParams(); });
+            if (dateStartPicker && dateStartPicker.config && Array.isArray(dateStartPicker.config.onChange)) {
+                dateStartPicker.config.onChange.push(() => {
+                    filterRequests();
+                    updateUrlParams();
+                });
+            }
+            if (dateEndPicker && dateEndPicker.config && Array.isArray(dateEndPicker.config.onChange)) {
+                dateEndPicker.config.onChange.push(() => {
+                    filterRequests();
+                    updateUrlParams();
+                });
+            
+            }
         }
 
         // ========================
@@ -1001,6 +1045,21 @@
             initResponsibleSelects();
             initStatuses();
             initEventListeners();
+
+                
+            // --------------
+            // 3) Привязка к кнопке
+            // --------------
+            $('#clearAllFilter')
+                // чтобы кнопка не отправляла форму
+                .attr('type', 'button')
+                // отодвязываем старые обработчики на всякий случай
+                .off('click')
+                // вешаем наш
+                .on('click', function(e) {
+                    e.preventDefault();
+                    clearAllFilters();
+                });
             filterRequests();
         }
 

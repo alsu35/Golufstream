@@ -351,7 +351,6 @@ def request_create_view(request):
 def request_cancel_view(request, pk):
     user = request.user
     profile = getattr(user, 'profile', None)
-
     if not profile or profile.role.code not in ('operator', 'customer'):
         return HttpResponseForbidden("Нет прав на отмену")
 

@@ -3,22 +3,6 @@ from .models import Category, Request, Status, Profile
 from django.forms.models import ModelChoiceIteratorValue
 from django.core.exceptions import ValidationError
 
-# class EquipmentCategorySelect(forms.Select):
-#     def create_option(self, name, value, label, selected, index, subindex=None, attrs=None):
-#         option = super().create_option(name, value, label, selected, index, subindex=subindex, attrs=attrs)
-
-#         if isinstance(value, ModelChoiceIteratorValue):
-#             value = value.value
-
-#         if value:
-#             try:
-#                 category = Category.objects.get(pk=value)
-#                 option['attrs']['data-code'] = category.code
-#             except Category.DoesNotExist:
-#                 pass
-
-#         return option
-
 class RequestForm(forms.ModelForm):
     class Meta:
         model = Request
