@@ -252,89 +252,96 @@ def request_detail_view(request, pk):
 
 @login_required
 def request_create_view(request):
-    user = request.user
+    user    = request.user
     profile = getattr(user, 'profile', None)
-
+    categories = Category.objects.all()
+    # --- Список заказчиков (роль customer в той же локации) ---
     customers = Profile.objects.filter(
         location=profile.location,
         role__code='customer'
     ).select_related('user')
 
-    if _has_role(user, 'customer'):
-        # заказчик видит только из своей организации
+    # --- Список ответственных ---
+    if profile and profile.role.code == 'customer':
         responsibles = Profile.objects.filter(
             department__organization=profile.department.organization,
             location=profile.location
-        ).exclude(
-            role__code__in=['operator', 'admin']
-        ).select_related('user')
+        ).exclude(role__code__in=['operator', 'admin']).select_related('user')
     else:
         responsibles = Profile.objects.filter(
             location=profile.location
-        ).exclude(
-            role__code__in=['operator', 'admin']
-        ).select_related('user')
+        ).exclude(role__code__in=['operator', 'admin']).select_related('user')
 
-
-    # Проверка прав
-    if not any([user.is_superuser,
-                _has_role(user, 'admin'),
-                _has_role(user, 'operator'),
-                _has_role(user, 'customer')]):
+    # --- Проверка прав: superuser, admin, operator или customer ---
+    allowed = (
+        user.is_superuser
+        or (profile and profile.role.code in ('admin', 'operator', 'customer'))
+    )
+    if not allowed:
         return HttpResponseForbidden("Нет прав на создание заявки")
 
-    show_lifting = False  # дефолт
+    show_lifting = False
 
     if request.method == 'POST':
         form = RequestForm(request.POST, user=user)
-        # Если форма прошла валидацию, сразу сохраняем
-        if form.is_valid():
-            req = form.save(commit=False)
-            if not profile:
-                return HttpResponseForbidden("Профиль не найден")
 
-            if not _has_role(user, 'operator'):
-                req.customer = profile  # для всех, кроме оператора
-            req.location = profile.location
+        # Если оператор, требуем выбор заказчика
+        if profile and profile.role.code == 'operator' and not request.POST.get('customer'):
+            form.add_error('customer', 'Выберите заказчика')
 
-            # Если не lifting — очищаем доп. поля
-            if req.equipment_category.code != 'lifting':
-                req.responsible_certificate = None
-                req.rigger_name = None
-                req.rigger_certificates = None
+        # Если форма невалидна — рендерим с ошибками
+        if not form.is_valid():
+            # Определяем, показывать ли блок подъёмных сооружений
+            cat_id = request.POST.get('equipment_category')
+            show_lifting = (
+                Category.objects.filter(pk=cat_id)
+                .values_list('code', flat=True)
+                .first() == 'lifting'
+            )
+            return render(request, 'requests/request_form.html', {
+                'form': form,
+                'categories':categories,
+                'show_lifting_fields': show_lifting,
+                'responsibles': responsibles,
+                'customers': customers,
+                'profile': profile,
+            })
 
-            try:
-                req.status = Status.objects.get(code='new')
-            except Status.DoesNotExist:
-                return HttpResponseServerError("Статус 'new' не найден")
+        # Форма валидна — сохраняем
+        req = form.save(commit=False)
 
-            req.save()
-            return redirect('request_list')
+        # Заполняем заказчика
+        if profile and profile.role.code == 'operator':
+            req.customer = form.cleaned_data['customer']
+        else:
+            req.customer = profile
 
-        # Форма невалидна — определяем, показывать ли lifting-поля
-        # вариант A: из form.data (POST-данных)
-        cat_id = request.POST.get('equipment_category')
-        if cat_id:
-            try:
-                from .models import Category
-                cat = Category.objects.get(pk=cat_id)
-                show_lifting = (cat.code == 'lifting')
-            except Category.DoesNotExist:
-                show_lifting = False
+        # Локация
+        req.location = profile.location
+
+        # Статус new
+        try:
+            req.status = Status.objects.get(code='new')
+        except Status.DoesNotExist:
+            return HttpResponseServerError("Статус 'new' не найден")
+
+        req.save()
+        return redirect('request_list')
 
     else:
-        # GET
-        initial_data = {}
+        # GET-запрос — инициализируем пустую форму
+        initial = {}
         if profile:
-            initial_data['location'] = profile.location_id
-        form = RequestForm(initial=initial_data, user=user)
-        # readonly для локации
+            initial['location'] = profile.location_id
+
+        form = RequestForm(initial=initial, user=user)
         if profile:
             form.fields['location'].widget.attrs['readonly'] = True
 
     return render(request, 'requests/request_form.html', {
         'form': form,
         'show_lifting_fields': show_lifting,
+        'categories': categories,
         'responsibles': responsibles,
         'customers': customers,
         'profile': profile,
@@ -373,6 +380,7 @@ def request_cancel_view(request, pk):
 def request_update_view(request, pk=None):
     user = request.user
     profile = getattr(user, 'profile', None)
+    categories = Category.objects.all()
 
     # responsables…
     responsibles = Profile.objects.filter(
@@ -446,6 +454,7 @@ def request_update_view(request, pk=None):
         'profile': profile,
         'is_duplicate': 'original_pk' in request.GET,
         'show_lifting_fields': show_lifting,
+        'categories': categories,
     })
 
 @login_required
@@ -484,6 +493,7 @@ def request_double(request, pk):
     responsibles = Profile.objects.filter(
         location=profile.location
     ).exclude(role__code__in=['operator', 'admin']).select_related('user')
+    categories = Category.objects.all()
 
     if request.method == 'POST':
         # принимаем данные и валидируем
@@ -521,6 +531,7 @@ def request_double(request, pk):
         'profile': profile,
         'duplicated': True,
         'show_lifting_fields': show_lifting,
+        'categories': categories,
     })
 
 # ———————— Ошибки ————————

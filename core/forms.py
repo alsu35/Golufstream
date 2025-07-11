@@ -3,22 +3,21 @@ from .models import Category, Request, Status, Profile
 from django.forms.models import ModelChoiceIteratorValue
 from django.core.exceptions import ValidationError
 
+# class EquipmentCategorySelect(forms.Select):
+#     def create_option(self, name, value, label, selected, index, subindex=None, attrs=None):
+#         option = super().create_option(name, value, label, selected, index, subindex=subindex, attrs=attrs)
 
-class EquipmentCategorySelect(forms.Select):
-    def create_option(self, name, value, label, selected, index, subindex=None, attrs=None):
-        option = super().create_option(name, value, label, selected, index, subindex=subindex, attrs=attrs)
+#         if isinstance(value, ModelChoiceIteratorValue):
+#             value = value.value
 
-        if isinstance(value, ModelChoiceIteratorValue):
-            value = value.value
+#         if value:
+#             try:
+#                 category = Category.objects.get(pk=value)
+#                 option['attrs']['data-code'] = category.code
+#             except Category.DoesNotExist:
+#                 pass
 
-        if value:
-            try:
-                category = Category.objects.get(pk=value)
-                option['attrs']['data-code'] = category.code
-            except Category.DoesNotExist:
-                pass
-
-        return option
+#         return option
 
 class RequestForm(forms.ModelForm):
     class Meta:
@@ -44,7 +43,7 @@ class RequestForm(forms.ModelForm):
             'time_start': forms.TimeInput(attrs={'type': 'time'}),
             'time_end':   forms.TimeInput(attrs={'type': 'time'}),
             'comment':    forms.Textarea(attrs={'rows': 3}),
-            'equipment_category': EquipmentCategorySelect(attrs={'class': 'form-select'}),
+            # 'equipment_category': EquipmentCategorySelect(attrs={'class': 'form-select'}),
         }
         error_messages = {
             'location':     {'required': 'Укажите локацию'},
@@ -104,6 +103,7 @@ class RequestForm(forms.ModelForm):
         if commit:
             obj.save()
         return obj
+    
 
     
 class LoginForm(forms.Form):

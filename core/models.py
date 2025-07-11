@@ -293,7 +293,6 @@ class Request(models.Model):
     def __str__(self):
         return f"Заявка #{self.id} - {self.work_object}"
     
-
     def clean(self):
             super().clean()
             errors = {}
@@ -311,28 +310,35 @@ class Request(models.Model):
                 if dt_end <= dt_start:
                     errors['time_end'] = 'Дата и время окончания должны быть после начала'
 
-            code = None
-            if self.equipment_category:
-                code = self.equipment_category.code
+            # 3) Специфика для подъёмных сооружений
+            cat_id = self.equipment_category_id
+            code = (
+                Category.objects
+                .filter(pk=cat_id)
+                .values_list('code', flat=True)
+                .first()
+                if cat_id else None
+            )
 
             if code == 'lifting':
-                # Эти поля обязательны
                 if not self.responsible_certificate:
-                    self.add_error('responsible_certificate', 'Это поле обязательно для заполнения.')
+                    errors['responsible_certificate'] = \
+                        'Для категории "Подъемные сооружения и такелаж" обязательно укажите номер удостоверения ответственного'
                 if not self.rigger_name:
-                    self.add_error('rigger_name', 'Это поле обязательно для заполнения.')
+                    errors['rigger_name'] = \
+                        'Для категории "Подъемные сооружения и такелаж" обязательно укажите ФИО стропальщиков'
                 if not self.rigger_certificates:
-                    self.add_error('rigger_certificates', 'Это поле обязательно для заполнения.')
+                    errors['rigger_certificates'] = \
+                        'Для категории "Подъемные сооружения и такелаж" обязательно укажите номера удостоверений стропальщиков'
             else:
-                # Категория не lifting — очищаем поля подъемных сооружений, но НЕ equipment_category
+                # если не lifting — очищаем подъемные поля
                 self.responsible_certificate = None
                 self.rigger_name = None
                 self.rigger_certificates = None
 
-
             if errors:
                 raise ValidationError(errors)
-            
+                
     def save(self, *args, **kwargs):
         """Автоматическая обработка перед сохранением"""
         self.full_clean()
