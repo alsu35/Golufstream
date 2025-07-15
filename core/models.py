@@ -7,7 +7,7 @@ from datetime import datetime
 
 class NamedModel(models.Model):
     code = models.CharField(max_length=20, unique=True)
-    name = models.CharField(max_length=100, unique=True)
+    name = models.CharField(max_length=100, unique=True, db_index=True)
 
     class Meta:
         abstract = True
@@ -225,7 +225,6 @@ class Request(models.Model):
         blank=True,
         default=list
     )
-
     work_object = models.CharField(
         _('Объект работ'),
         max_length=255
@@ -262,7 +261,6 @@ class Request(models.Model):
         related_name='equipment_requests',
         db_index=True
     )
-
     responsible_certificate = models.CharField(
         _('Номер удостоверения ответственного'),
         max_length=100,
@@ -332,9 +330,9 @@ class Request(models.Model):
                         'Для категории "Подъемные сооружения и такелаж" обязательно укажите номера удостоверений стропальщиков'
             else:
                 # если не lifting — очищаем подъемные поля
-                self.responsible_certificate = None
-                self.rigger_name = None
-                self.rigger_certificates = None
+                self.responsible_certificate = ''
+                self.rigger_name = ''
+                self.rigger_certificates = ''
 
             if errors:
                 raise ValidationError(errors)

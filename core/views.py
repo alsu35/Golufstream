@@ -15,6 +15,7 @@ from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
 from django.contrib import messages
 from django.urls import reverse
+from django.utils.safestring import mark_safe
 from django.core.cache import cache
 from django.contrib.auth import logout, authenticate, login
 from django.db import transaction
@@ -25,7 +26,6 @@ from django.db.models import Q
 from django.core.exceptions import PermissionDenied
 import logging
 from django.core.exceptions import PermissionDenied
-
 # Формы
 from .forms import RequestForm, LoginForm
 
@@ -166,6 +166,12 @@ def request_list_view(request):
         elif role_code == 'operator':
             # Все заявки по его локации
             qs = qs.filter(location=profile.location)
+        
+    # --- сериализацию break_periods ---
+    requests_with_serialized_breaks = []
+    for req in qs:
+        req.break_periods_json = mark_safe(json.dumps(req.break_periods or [])) 
+        requests_with_serialized_breaks.append(req)
 
     # --- Ответственные (только для оператора) ---
     responsibles = None
@@ -177,7 +183,7 @@ def request_list_view(request):
         ).select_related('user')
 
     return render(request, 'requests/request_list.html', {
-        'requests': qs,
+        'requests': requests_with_serialized_breaks,
         'statuses': Status.objects.all(),
         'locations': OrganizationLocation.objects.all(),
         'categories': Category.objects.all(),
