@@ -40,7 +40,6 @@ class CategoryAdmin(admin.ModelAdmin):
     search_fields = ('name', 'code')
     list_filter = ('code',)
 
-
 class ProfileInline(admin.StackedInline):
     model = Profile
     can_delete = False
@@ -50,9 +49,9 @@ class ProfileInline(admin.StackedInline):
 @admin.register(User)
 class UserAdmin(BaseUserAdmin):
     inlines = (ProfileInline,)
-    list_display = ('username', 'email', 'get_role', 'get_organization', 'is_staff', 'is_superuser')
-    search_fields = ('username', 'email')
-    ordering = ('username',)
+    list_display = ('email', 'get_role', 'get_organization', 'is_staff', 'is_superuser')
+    search_fields = ('email',)
+    ordering = ('email',)
 
     def get_role(self, obj):
         return obj.profile.role.name if hasattr(obj, 'profile') and obj.profile.role else '-'
@@ -67,7 +66,7 @@ class UserAdmin(BaseUserAdmin):
 class ProfileAdmin(admin.ModelAdmin):
     list_display = ('user', 'full_name', 'is_active')
     list_filter = ('is_active', 'role', 'location')
-    search_fields = ('last_name', 'first_name', 'middle_name', 'user__username')
+    search_fields = ('last_name', 'first_name', 'middle_name', 'user__email')
     raw_id_fields = ('user',)
     list_select_related = ('department', 'department__organization', 'role', 'location')
 

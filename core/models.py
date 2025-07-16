@@ -92,26 +92,30 @@ class Department(models.Model):
 
 # --- Пользователь ---
 class User(AbstractUser):
+    username = models.CharField(
+        _('username'),
+        max_length=150,
+        unique=True,
+        blank=True,
+        null=True,
+        validators=[AbstractUser.username_validator],
+    )
+
     email = models.EmailField(
         _('Почта'),
         unique=True,
         help_text=_('Обязательное поле')
     )
+
+    USERNAME_FIELD = 'email'  # логин по email
+    REQUIRED_FIELDS = []       # username не обязателен
     
-    # Переопределяем стандартные поля Django
-    username = models.CharField(
-        _('Логин'),
-        max_length=150,
-        unique=True,
-        help_text=_('Обязательное поле. Только буквы, цифры и @/./+/-/_.')
-    )
-    
+    def __str__(self):
+        return self.email
+
     class Meta:
         verbose_name = _('Пользователь')
         verbose_name_plural = _('Пользователи')
-        
-    def __str__(self):
-        return self.username
 
 # --- Профиль ---
 class Profile(models.Model):
