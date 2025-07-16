@@ -645,9 +645,9 @@
                             <input class="form-check-input column-checkbox" type="checkbox" value="Окончание работ по факту" id="col-Окончание работ по факту">
                             <label class="form-check-label" for="col-Окончание работ по факту">Окончание работ по факту</label>
                         </div>
-                        <div class="form-check" data-column="Объем работы (ч)">
-                            <input class="form-check-input column-checkbox" type="checkbox" value="Объем работы (ч)" id="col-Объем работы (ч)">
-                            <label class="form-check-label" for="col-Объем работы (ч)">Объем работы (ч)</label>
+                        <div class="form-check" data-column="Объем работы (чч:мм)">
+                            <input class="form-check-input column-checkbox" type="checkbox" value="Объем работы (чч:мм)" id="col-Объем работы (чч:мм)">
+                            <label class="form-check-label" for="col-Объем работы (чч:мм)">Объем работы (чч:мм)</label>
                         </div>
                     </div>
 
@@ -941,7 +941,7 @@ $(function(){
         'Время окончания работ',
         'Окончание работ по факту',
         'Перерывы',
-        'Объем работы (ч)',
+        'Объем работы (чч:мм)',
         'Локация',
         'Категория',
         'Вид транспорта',
@@ -1283,15 +1283,36 @@ $(function(){
     // ========================
     // Генерация Excel
     // ========================
-    async function generateExcel(headers, data) {
+    async function generateExcel(headers, data, rowStatuses) {
         const wb = new ExcelJS.Workbook();
         const ws = wb.addWorksheet('Заявки', { views: [{ state: 'frozen', ySplit: 1 }] });
 
+        // Цвета статусов
+        const statusFills = {
+            new:      { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF4D867' } }, // Жёлтый
+            assigned: { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD1B3FF' } }, // Лавандовый
+            work:     { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFB2EAC3' } }, // Бирюзовый
+            done:     { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF88C9ED' } }, // Голубой
+            cancel:   { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFF9696' } }, // Красный
+        };
+            
         // Добавляем заголовки
         ws.addRow(headers);
 
         // Добавляем данные
-        data.forEach(r => ws.addRow(r));
+        data.forEach((rowValues, idx) => {
+            const excelRow = ws.addRow(rowValues);
+
+            // Применяем цвет строки по статусу
+            const statusCode = rowStatuses[idx];
+            const fillStyle = statusFills[statusCode];
+
+            if (fillStyle) {
+                excelRow.eachCell(cell => {
+                    cell.fill = fillStyle;
+                });
+            }
+        });
 
         // Стили
         ws.columns.forEach((col, i) => {
@@ -1391,13 +1412,17 @@ $(function(){
         return `${day}.${month}.${year}`;
     }
     
-    // Форматирует строку: "иванов иван" → "Иванов иван"
+    // ========================
+    // формат с заглавной 
+    // ========================
     function capitalizeFirstLetter(str) {
         if (typeof str !== 'string' || !str.trim()) return str;
         return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
     }
 
-    // Форматирует строку: "иванов иван" → "Иванов Иван"
+    // ========================
+    // формат с заглавной все слова
+    // ========================
     function capitalizeWords(str) {
         if (typeof str !== 'string' || !str.trim()) return str;
         return str.toLowerCase().split(' ')
@@ -1409,133 +1434,160 @@ $(function(){
     // Функция экспорта в Excel
     // ========================
     function exportToExcel(selectedColumns) {
-        const headers = selectedColumns;
-        const data = [];
-        $('#requestsTable tbody tr:visible').each(function () {
-            const $tr = $(this);
-            const row = [];
-            headers.forEach(header => {
-                let value = ' ';
-                switch (header) {
-                    case 'ID':
-                        value =  $tr.data('id') || '';
-                        break;
-                    case 'Дата подачи':
-                        value =  formatDate($tr.data('submitted')?.split('T')[0]);
-                        break;
-                    case 'Время подачи':
-                        value =  $tr.data('submitted')?.split('T')[1]?.slice(0, 5) || '';
-                        break;
-                    case 'Подразделение':
-                        value =  $tr.data('department') || '';
-                        break;
-                    case 'Ответственный':
-                        value =  $tr.data('responsible') || '';
-                        break;
-                    case 'Заказчик':
-                        value =  $tr.data('customer') || '';
-                        break;
-                    case 'Дата начала работы':
-                        value =  formatDate($tr.data('date-start'));
-                        break;
-                    case 'Дата окончания работы':
-                        value =  formatDate($tr.data('date-end'));
-                        break;
-                    case 'Время начала работ':
-                        value =  $tr.data('time-start') || '';
-                        break;
-                    case 'Время окончания работ':
-                        value =  $tr.data('time-end') || '';
-                        break;
-                    case 'Окончание работ по факту':
-                        value =  $tr.data('is-completed-fact') ? 'Да' : 'Нет';
-                        break;
-                    case 'Перерывы': {
-                        // 1) Достаём «сырую» строку из атрибута
-                        const raw = $tr.attr('data-break-periods') || '[]';
-                        let breaksArr = [];
+    const headers = selectedColumns;
+    const data = [];
+    const rowStatuses = [];
 
-                        // 2) Пробуем распарсить
-                        try {
-                            breaksArr = JSON.parse(raw);
-                        } catch (e) {
-                            console.warn('Невалидный JSON в data-break-periods:', raw);
-                        }
+    $('#requestsTable tbody tr:visible').each(function () {
+        const $tr = $(this);
+        const row = [];
+        const statusCode = $tr.data('status') || 'new';
+        rowStatuses.push(statusCode);
 
-                        // 3) Если это массив — соединяем в строку, иначе возвращаем пустую
-                        value = Array.isArray(breaksArr)
-                            ? breaksArr.join(', ')
-                            : '';
-                        break;
-                    }
-                    case 'Объем работы (ч)': {
-                        const ds = $tr.data('date-start');
-                        const de = $tr.data('date-end');
-                        const ts = $tr.data('time-start') || '';
-                        const te = $tr.data('time-end') || '';
-                        if (ds && ts && de && te) {
-                            const start = new Date(`${ds}T${ts}`);
-                            const end = new Date(`${de}T${te}`);
-                            const hrs = (end - start) / 36e5;
-                            value = Math.round(hrs * 100) / 100;
-                        }else{
-                            value = '';
-                        }
-                        break;
-                    }
-                    case 'Локация':
-                        value = $tr.data('location-name') || '';
-                        break;
-                    case 'Категория':
-                        value = $tr.data('equipment-category-name') || '';
-                        break;
-                    case 'Вид транспорта':
-                        value = $tr.data('transport-type') || '';
-                        break;
-                    case 'Вид работ':
-                        value = $tr.data('work-type') || '';
-                        break;
-                    case 'Объект работ':
-                        value = $tr.data('work-object') || '';
-                        break;
-                    case 'Статус':
-                        value = $tr.data('status-name') || '';
-                        break;
-                    case 'Комментарий':
-                        value = $tr.data('comment') || '';
-                        break;
-                    case 'Номер удостоверения ответственного':
-                        value = $tr.data('responsible-id-card') || '';
-                        break;
-                    case 'ФИО стропольщика':
-                        value = $tr.data('slingers')?.names || '';
-                        break;
-                    case 'Номера удостоверений стропольщиков':
-                        value = $tr.data('slingers')?.certificates || '';
-                        break;
-                    default:
-                        value = '';
+        headers.forEach(header => {
+        let value = '';
+
+        switch (header) {
+            case 'ID':
+                value = $tr.data('id') || '';
+                break;
+
+            case 'Дата подачи':
+                value = formatDate($tr.data('submitted')?.split('T')[0]);
+                break;
+
+            case 'Время подачи':
+                value = $tr.data('submitted')?.split('T')[1]?.slice(0, 5) || '';
+                break;
+
+            case 'Подразделение':
+                value = $tr.data('department') || '';
+                break;
+
+            case 'Ответственный':
+                value = $tr.data('responsible') || '';
+                break;
+
+            case 'Заказчик':
+                value = $tr.data('customer') || '';
+                break;
+
+            case 'Дата начала работы':
+                value = formatDate($tr.data('date-start'));
+                break;
+
+            case 'Дата окончания работы':
+                value = formatDate($tr.data('date-end'));
+                break;
+
+            case 'Время начала работ':
+                value = $tr.data('time-start') || '';
+                break;
+
+            case 'Время окончания работ':
+                value = $tr.data('time-end') || '';
+                break;
+
+            case 'Окончание работ по факту':
+                value = $tr.data('is-completed-fact') ? 'Да' : 'Нет';
+                break;
+
+            case 'Перерывы': {
+                const raw = $tr.attr('data-break-periods') || '[]';
+                let breaksArr = [];
+                try {
+                    breaksArr = JSON.parse(raw);
+                } catch (e) {
+                    console.warn('Невалидный JSON в data-break-periods:', raw);
                 }
-                
-                // Применяем форматирование
-                if (typeof value === 'string' && value.trim()) {
-                    if (header === 'Ответственный' || header === 'Заказчик') {
-                        row.push(capitalizeWords(value));
-                    } else {
-                        row.push(capitalizeFirstLetter(value));
-                    }
-                } else {
-                    row.push(value);
-                }
-            });
+                value = Array.isArray(breaksArr)
+                    ? breaksArr.join(', ')
+                    : '';
+                break;
+            }
 
-            data.push(row);
+            case 'Объем работы (чч:мм)': {
+                const ts = $tr.data('time-start') || '';
+                const te = $tr.data('time-end') || '';
+                value = '';
+                if (ts && te) {
+                    // Разбираем время начала и окончания
+                    const [h1, m1] = ts.split(':').map(Number);
+                    const [h2, m2] = te.split(':').map(Number);
+
+                    // Считаем общее количество минут
+                    let diff = (h2 * 60 + m2) - (h1 * 60 + m1);
+                    if (diff < 0) diff += 24 * 60; // переход через полночь
+
+                    // Формируем строку "чч:мм"
+                    const hours = Math.floor(diff / 60);
+                    const minutes = diff % 60;
+                    value = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+                }
+                break;
+            }
+            case 'Локация':
+                value = $tr.data('location-name') || '';
+                break;
+
+            case 'Категория':
+                value = $tr.data('equipment-category-name') || '';
+                break;
+
+            case 'Вид транспорта':
+                value = $tr.data('transport-type') || '';
+                break;
+
+            case 'Вид работ':
+                value = $tr.data('work-type') || '';
+                break;
+
+            case 'Объект работ':
+                value = $tr.data('work-object') || '';
+                break;
+
+            case 'Статус':
+                value = $tr.data('status-name') || '';
+                break;
+
+            case 'Комментарий':
+                value = $tr.data('comment') || '';
+                break;
+
+            case 'Номер удостоверения ответственного':
+                value = $tr.data('responsible-id-card') || '';
+                break;
+
+            case 'ФИО стропольщика':
+                value = $tr.data('slingers')?.names || '';
+                break;
+
+            case 'Номера удостоверений стропольщиков':
+                value = $tr.data('slingers')?.certificates || '';
+                break;
+
+            default:
+                value = '';
+        }
+
+        // Применяем форматирование текста
+        if (typeof value === 'string' && value.trim()) {
+            if (header === 'Ответственный' || header === 'Заказчик') {
+            row.push(capitalizeWords(value));
+            } else {
+            row.push(capitalizeFirstLetter(value));
+            }
+        } else {
+            row.push(value);
+        }
         });
 
-        // 5) Генерируем Excel
-        generateExcel(headers, data);
-    }
+        data.push(row);
+    });
 
+    // Генерируем Excel
+    generateExcel(headers, data, rowStatuses);
+    }
 
     // ========================
     // Старт
