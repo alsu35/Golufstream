@@ -429,22 +429,14 @@
                             <label for="{{ form.equipment_category.id_for_label }}" class="form-label">
                                 Категория техники<span class="star">*</span>
                             </label>
-                            <select id="id_equipment_category" name="equipment_category" class="form-select">
-                                <option value="">—</option>
-                                {% for cat in categories %}
-                                <option value="{{ cat.pk }}"
-                                        data-code="{{ cat.code }}"
-                                        {% if form.instance.equipment_category_id == cat.pk %}selected{% endif %}>
-                                    {{ cat.name }}
-                                </option>
-                                {% endfor %}
-                            </select>
+                            {{ form.equipment_category }}
                             {% if form.equipment_category.errors %}
                             <div class="invalid-feedback d-block">
-                                {{ form.equipment_category.errors.as_text }}
+                                {{ form.equipment_category.errors.0 }}
                             </div>
                             {% endif %}
                         </div>
+
 
                         <!-- Статус заявки (только если поле есть в форме) -->
                         {% if form.status %}
@@ -468,6 +460,14 @@
                 <div class="col-md-6 form-section">
                     <h6>Период работ</h6>
                     <div class="row g-3" style="min-width: 300px">
+                        
+                        <!-- Блок под расчет часов -->
+                        <div class="col-12 mb-0">
+                            <p id="timeDifference" class="text-muted mb-0" style="font-size: calc(0.75rem + 0.1vw);">
+                                ⏱ Продолжительность времени (автоматически): —
+                            </p>
+                        </div>
+
                         <!-- Дата начала и окончания -->
                         <div class="col-12">
                             <div class="row content-data">
@@ -496,7 +496,7 @@
                         </div>
 
                         <!-- Время начала и окончания -->
-                        <div class="col-12">
+                        <div class="col-12 mb-2">
                             <div class="row content-time">
                                 <div class="col-6">
                                     <label for="{{ form.time_start.id_for_label }}" class="form-label">Время начала<span
@@ -520,14 +520,6 @@
                                 </div>
                             </div>
                         </div>
-
-                        <!-- Блок под расчет часов -->
-                        <div class="col-12 mt-1">
-                            <p id="timeDifference" class="text-muted" style="font-size: calc(0.75rem + 0.1vw);">
-                                ⏱ Продолжительность: —
-                            </p>
-                        </div>
-
 
                         <!-- Перерывы -->
                         <div class="col-12 no-row-gap">
@@ -887,7 +879,7 @@
                 const end = endInput.value;
 
                 if (!start || !end) {
-                    output.textContent = "⏱ Продолжительность: —";
+                    output.textContent = "⏱ Продолжительность времени (автоматически): —";
                     return;
                 }
 
@@ -907,7 +899,7 @@
                 const hours = Math.floor(diff / 60);
                 const minutes = diff % 60;
 
-                output.textContent = `⏱ Продолжительность: ${hours} ч ${minutes} мин`;
+                output.textContent = `⏱ Продолжительность времени (автоматически): ${hours} ч ${minutes} мин`;
             }
 
             // События времени

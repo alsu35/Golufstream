@@ -773,7 +773,7 @@
                                 <span class="text">Подробнее</span>
                             </a>
 
-                            {% if profile and profile.role.code in 'operator,customer' %}
+                            {% if profile and profile.role.code in 'operator,customer' and req.status.code == 'new' or req.status.code == 'assigned' %}
                                 <!-- Редактировать -->
                                 <a href="{% url 'request_update' req.id %}" class="btn btn-sm btn-edit me-1 btn-responsive d-flex align-items-center gap-1">
                                 <i class="bi bi-pencil-square"></i>

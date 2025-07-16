@@ -143,7 +143,8 @@ class Profile(models.Model):
         max_length=255
     )
     birth_date = models.DateField(
-        _('Дата рождения')
+        _('Дата рождения'),
+        blank=True, null=True
     )
     role = models.ForeignKey(
         Role,
@@ -341,3 +342,11 @@ class Request(models.Model):
         """Автоматическая обработка перед сохранением"""
         self.full_clean()
         super().save(*args, **kwargs)
+
+# ----------------------------------------
+# import telegram
+# from django.conf import settings
+
+# def send_telegram_message(chat_id, text):
+#     bot = telegram.Bot(token=settings.TELEGRAM_BOT_TOKEN)
+#     bot.send_message(chat_id=chat_id, text=text)

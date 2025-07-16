@@ -27,7 +27,6 @@ class RequestForm(forms.ModelForm):
             'time_start': forms.TimeInput(attrs={'type': 'time'}),
             'time_end':   forms.TimeInput(attrs={'type': 'time'}),
             'comment':    forms.Textarea(attrs={'rows': 3}),
-            # 'equipment_category': EquipmentCategorySelect(attrs={'class': 'form-select'}),
         }
         error_messages = {
             'location':     {'required': 'Укажите локацию'},
@@ -87,6 +86,7 @@ class RequestForm(forms.ModelForm):
         if commit:
             obj.save()
         return obj
+        
     
 class LoginForm(forms.Form):
     username = forms.CharField(label='Логин', max_length=150)

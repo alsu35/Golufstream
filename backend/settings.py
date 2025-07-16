@@ -81,6 +81,7 @@ ROOT_URLCONF = 'backend.urls'
 LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = '/'  # Перенаправление после успешного входа
 LOGOUT_REDIRECT_URL = '/login/'  # Перенаправление после выхода
+TELEGRAM_BOT_TOKEN = "7977098735:AAGOfWoe0LT0VL_ru32MU8qoRDs0MGyqr-I"
 
 # Настройки безопасности сессий
 SESSION_COOKIE_AGE = 24 * 60 * 60  # Время жизни сессии - 1 день

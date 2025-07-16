@@ -297,44 +297,38 @@ def request_create_view(request):
         if profile and profile.role.code == 'operator' and not request.POST.get('customer'):
             form.add_error('customer', 'Выберите заказчика')
 
-        # Если форма невалидна — рендерим с ошибками
-        if not form.is_valid():
-            # Определяем, показывать ли блок подъёмных сооружений
-            cat_id = request.POST.get('equipment_category')
-            show_lifting = (
-                Category.objects.filter(pk=cat_id)
-                .values_list('code', flat=True)
-                .first() == 'lifting'
-            )
-            return render(request, 'requests/request_form.html', {
-                'form': form,
-                'categories':categories,
-                'show_lifting_fields': show_lifting,
-                'responsibles': responsibles,
-                'customers': customers,
-                'profile': profile,
-            })
 
-        # Форма валидна — сохраняем
-        req = form.save(commit=False)
+        if form.is_valid():
+            req = form.save(commit=False)
 
-        # Заполняем заказчика
-        if profile and profile.role.code == 'operator':
-            req.customer = form.cleaned_data['customer']
-        else:
-            req.customer = profile
+            # оператор сам выбирает customer, остальные — свой профиль
+            if profile.role.code == 'operator':
+                req.customer = form.cleaned_data['customer']
+            else:
+                req.customer = profile
 
-        # Локация
-        req.location = profile.location
+            # локация    
+            req.location = profile.location
 
-        # Статус new
-        if not req.status:  # Запасной вариант, если статус не выбран
-            req.status = Status.objects.filter(code='new').first()
+            # статус new
+            if not req.status: 
+                req.status = Status.objects.filter(code='new').first()
+            
+            req.save()
 
-
-        req.save()
-        messages.success(request, 'Заявка успешно создана')
-        return redirect('request_list')
+            messages.success(request, 'Заявка успешно создана')
+            return redirect('request_list')
+        # если не валидна — сразу отрисовываем тот же шаблон
+        show_lifting = (form.cleaned_data.get('equipment_category') and
+                        form.cleaned_data['equipment_category'].code == 'lifting')
+        return render(request, 'requests/request_form.html', {
+            'form': form,
+            'show_lifting_fields': show_lifting,
+            'categories': categories,
+            'responsibles': responsibles,
+            'customers': customers,
+            'profile': profile,
+        })
 
     else:
         # GET-запрос — инициализируем пустую форму
@@ -389,10 +383,17 @@ def request_update_view(request, pk=None):
     profile = getattr(user, 'profile', None)
     categories = Category.objects.all()
 
-    # responsables…
-    responsibles = Profile.objects.filter(
-        location=profile.location
-    ).exclude(role__code__in=['operator', 'admin']).select_related('user')
+    # --- Список ответственных ---
+    if profile and profile.role.code == 'customer':
+        responsibles = Profile.objects.filter(
+            department__organization=profile.department.organization,
+            location=profile.location
+        ).exclude(role__code__in=['operator', 'admin']).select_related('user')
+    else:
+        responsibles = Profile.objects.filter(
+            location=profile.location
+        ).exclude(role__code__in=['operator', 'admin']).select_related('user')
+
 
     customers = Profile.objects.filter(
         location=profile.location,
@@ -426,7 +427,13 @@ def request_update_view(request, pk=None):
         form = RequestForm(request.POST, instance=req, user=user)
         if form.is_valid():
             new_req = form.save(commit=False)
-            new_req.customer = profile
+
+            # только если текущий пользователь - customer, фиксируем заказчика
+            if _has_role(user, 'customer'):
+                new_req.customer = profile
+
+            new_req.save()
+
             # сохраняем
             new_req.save()
             messages.success(request, 'Заявка успешно сохранена')
