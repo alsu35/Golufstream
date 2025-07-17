@@ -105,9 +105,9 @@ def login_view(request):
             if user.is_superuser or _has_role(user, 'admin'):
                 return redirect('/admin/')
             return redirect('request_list')
-        
-        messages.error(request, "Неверный логин или пароль")
-
+        else:
+            form.add_error(None, "Неверный логин или пароль")
+            
     return render(request, 'registration/login.html', {'form': form})
 
 @login_required
@@ -446,6 +446,10 @@ def request_update_view(request, pk=None):
     else:
         # GET
         form = RequestForm(instance=req, user=user) if req else RequestForm(user=user)
+        # Для GET запроса явно устанавливаем начальное значение категории
+        if req and req.equipment_category:
+            form.initial['equipment_category'] = req.equipment_category.id
+
         # для customer делаем readonly…
         if _has_role(user, 'customer'):
             form.fields.pop('status', None)
@@ -482,6 +486,7 @@ def request_update_view(request, pk=None):
         'is_duplicate': 'original_pk' in request.GET,
         'show_lifting_fields': show_lifting,
         'categories': categories,
+        'current_category_id': cat_id, 
     })
 
 @login_required

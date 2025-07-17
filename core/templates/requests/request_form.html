@@ -425,18 +425,28 @@
 
 
                         <!-- Категория техники -->
+                        {% if form.equipment_category %}
                         <div class="col-md-6">
                             <label for="{{ form.equipment_category.id_for_label }}" class="form-label">
                                 Категория техники<span class="star">*</span>
                             </label>
-                            {{ form.equipment_category }}
+                            <select name="equipment_category" id="id_equipment_category" class="form-select">
+                                {% for category in form.fields.equipment_category.queryset %}
+                                    <option value="{{ category.id }}"
+                                            data-code="{{ category.code }}"
+                                            {% if form.equipment_category.value == category.id|stringformat:"s" or category.id == form.initial.equipment_category %}selected{% endif %}>
+                                        {{ category.name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+
                             {% if form.equipment_category.errors %}
                             <div class="invalid-feedback d-block">
                                 {{ form.equipment_category.errors.0 }}
                             </div>
                             {% endif %}
                         </div>
-
+                        {% endif %}
 
                         <!-- Статус заявки (только если поле есть в форме) -->
                         {% if form.status %}
@@ -711,6 +721,7 @@
 
     <script>
         // Добавляет на страницу новую строку перерыва с заданным временем начала и конца.
+        
         function addBreakPeriod(start = "", end = "") {
             const container = document.getElementById("break-periods-container");
 
@@ -864,8 +875,11 @@
                 const selectedOption = categorySelect.options[categorySelect.selectedIndex];
                 const categoryCode = selectedOption.dataset.code || '';
 
-                liftingBlock.style.display = (categoryCode === LIFTING_CODE) ? 'block' : 'none';
-            }
+                // Проверяем как текущий выбор, так и сохраненное значение
+                const isLifting = categoryCode === LIFTING_CODE || 
+                (selectedOption && selectedOption.selected && selectedOption.dataset.code === LIFTING_CODE);
+        
+                liftingBlock.style.display = isLifting ? 'block' : 'none';}
 
             if (categorySelect) {
                 categorySelect.addEventListener('change', toggleLiftingFields);
