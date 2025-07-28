@@ -4,6 +4,7 @@ from django.utils.translation import gettext_lazy as _
 from django.core.exceptions import ValidationError
 from django.core.cache import cache
 from datetime import datetime
+from django.utils import timezone
 
 class NamedModel(models.Model):
     code = models.CharField(max_length=20, unique=True)
@@ -295,6 +296,32 @@ class Request(models.Model):
         
     def __str__(self):
         return f"Заявка #{self.id} - {self.work_object}"
+    
+    @property
+    def date_start_ended_allowed(self):
+        if not hasattr(self, 'date_start') or not hasattr(self, 'time_start'):
+            return False
+
+        try:
+            # Объединяем дату и время в одну timezone-aware дату
+            start_datetime = datetime.combine(self.date_start, self.time_start)
+            start_datetime = timezone.make_aware(start_datetime)
+            return timezone.now() > start_datetime
+        except Exception:
+            return False
+        
+    @property
+    def date_end_ended_allowed(self):
+        if not hasattr(self, 'date_end') or not hasattr(self, 'time_end'):
+            return False
+
+        try:
+            # Объединяем дату и время в одну timezone-aware дату
+            end_datetime = datetime.combine(self.date_end, self.time_end)
+            end_datetime = timezone.make_aware(end_datetime)
+            return timezone.now() > end_datetime
+        except Exception:
+            return False
     
     def clean(self):
             super().clean()

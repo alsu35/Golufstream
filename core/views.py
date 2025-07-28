@@ -199,13 +199,30 @@ def update_status(request):
         request_id = data.get('request_id')
         status_id = data.get('status_id')
 
-        req = Request.objects.get(id=request_id)
-        status = Status.objects.get(id=status_id)
+        req = Request.objects.select_related('status').get(id=request_id)
+        new_status = Status.objects.get(id=status_id)
 
-        req.status = status
+        profile = request.user.profile
+        role_code = profile.role.code
+
+        can_update = False
+
+        if role_code == 'operator':
+            can_update = True
+        elif role_code == 'customer':
+            if req.status.code == 'assigned' and req.date_start_ended_allowed:
+                can_update = new_status.code in ['assigned', 'work', 'cancel']
+            elif req.status.code == 'work' and req.date_end_ended_allowed:
+                can_update = new_status.code in ['work', 'done', 'cancel']
+
+        if not can_update:
+            return JsonResponse({'success': False, 'error': 'Нет прав на изменение статуса.'})
+
+        req.status = new_status
         req.save(update_fields=['status'])
 
         return JsonResponse({'success': True})
+
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
 
@@ -215,13 +232,24 @@ def update_responsible(request):
     try:
         data = json.loads(request.body)
         req = Request.objects.get(id=data['request_id'])
+        
         # теперь profile_id, а не user_id
+        profile = request.user.profile
+        if profile.role.code == 'operator':
+            if req.status.code not in ['new', 'assigned']:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Вы можете изменить ответственного только для заявок со статусом "Новая" или "Назначена"'
+                }, status=403)
+
+        # Назначение ответственного
         prof = Profile.objects.get(id=data['responsible_id'])
         req.responsible = prof
         req.save(update_fields=['responsible'])
+
         return JsonResponse({'success': True})
     except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)})
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
 
 @login_required
 def request_detail_view(request, pk):

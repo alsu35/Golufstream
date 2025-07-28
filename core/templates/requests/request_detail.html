@@ -183,43 +183,7 @@
                 </div>
             </div>
             <!-- Modal -->
-            <div class="modal fade" id="customerModal" tabindex="-1" aria-labelledby="customerModalLabel"
-                aria-hidden="true">
-                <div class="modal-dialog modal-dialog-centered">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title" id="customerModalLabel">Информация о заказчике</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                        </div>
-                        <div class="modal-body">
-                            <p><strong>ФИО:</strong> {{ req.customer.full_name }}</p>
-                            <p><strong>Дата рождения:</strong> {{ req.customer.birth_date|date:"d.m.Y" }}</p>
-                            <p><strong>Должность:</strong> {{ req.customer.position }}</p>
-                            <p><strong>Организация:</strong>
-                                {% if req.customer and req.customer.department and req.customer.department.organization %}
-                                {% if req.customer.department.organization.parent %}
-                                {{ req.customer.department.organization.parent.name }} -
-                                {% endif %}
-                                {{ req.customer.department.organization.name }} - {{ req.customer.department.name }}
-                                {% else %}
-                                Нет данных об организации.
-                                {% endif %}
-                            </p>
-
-                            <p><strong>Телефон:</strong> {{ req.customer.phone|default:"—" }}</p>
-                            {% if req.customer.user %}
-                            <p><strong>Email:</strong> {{ req.customer.user.email|default:"—" }}</p>
-                            {% endif %}
-                            <p><strong>Локация:</strong> {{ req.customer.location.name }}</p>
-                            <p><strong>Статус:</strong> {% if req.customer.is_active %}Активен{% else %}Не активен
-                                {% endif %}</p>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            {% include 'modals/customer_modal.html' %}
 
             <!-- Информация об ответственном -->
             <div class="card shadow-sm flex-grow-1 card-personal">
@@ -237,42 +201,7 @@
                 </div>
             </div>
             <!-- Modal -->
-            <div class="modal fade" id="responsibleModal" tabindex="-1" aria-labelledby="responsibleModalLabel"
-                aria-hidden="true">
-                <div class="modal-dialog modal-dialog-centered">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title" id="responsibleModalLabel">Информация об ответственном</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                        </div>
-                        <div class="modal-body">
-                            <p><strong>ФИО:</strong> {{ req.responsible.full_name }}</p>
-                            <p><strong>Дата рождения:</strong> {{ req.responsible.birth_date|date:"d.m.Y" }}</p>
-                            <p><strong>Должность:</strong> {{ req.responsible.position }}</p>
-                            <p><strong>Организация:</strong>
-                                {% if req.customer and req.customer.department and req.customer.department.organization%}
-                                {% if req.customer.department.organization.parent %}
-                                {{ req.customer.department.organization.parent.name }} -
-                                {% endif %}
-                                {{ req.customer.department.organization.name }} - {{ req.customer.department.name }}
-                                {% else %}
-                                Нет данных об организации.
-                                {% endif %}
-                            </p>
-                            <p><strong>Телефон:</strong> {{ req.responsible.phone|default:"—" }}</p>
-                            {% if req.responsible.user %}
-                            <p><strong>Email:</strong> {{ req.responsible.user.email|default:"—" }}</p>
-                            {% endif %}
-                            <p><strong>Локация:</strong> {{ req.responsible.location.name }}</p>
-                            <p><strong>Статус:</strong> {% if req.responsible.is_active %}Активен{% else %}Не активен
-                                {% endif %}</p>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            {% include 'modals/responsible_modal.html' %}
         </div>
 
         <!-- Основная информация -->
@@ -287,7 +216,6 @@
                 <p class="mb-0"><strong>Категория техники:</strong> {{ req.equipment_category }}</p>
             </div>
         </div>
-
 
         <!-- Специфика для подъемных сооружений -->
         {% if req.equipment_category.code == 'lifting' %}

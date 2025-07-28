@@ -1,0 +1,126 @@
+<div class="modal fade" id="exportColumnsModal" tabindex="-1" aria-labelledby="exportColumnsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+        <div class="modal-header justify-content-between">
+            <h5 class="modal-title" id="exportColumnsModalLabel">Выберите столбцы для экспорта</h5>
+            <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Отмена</button>
+        </div>
+        <div class="modal-body">
+            <div class="row g-2">
+            <!-- Группы столбцов -->
+            <div class="col-md-6">
+                <h6>Основные данные</h6>
+                <div class="form-check" data-column="ID">
+                    <input class="form-check-input column-checkbox" type="checkbox" value="ID" id="col-ID">
+                    <label class="form-check-label" for="col-ID">ID</label>
+                </div>
+                <div class="form-check" data-column="Дата подачи">
+                    <input class="form-check-input column-checkbox" type="checkbox" value="Дата подачи" id="col-Дата подачи">
+                    <label class="form-check-label" for="col-Дата подачи">Дата подачи</label>
+                </div>
+                <div class="form-check" data-column="Время подачи">
+                    <input class="form-check-input column-checkbox" type="checkbox" value="Время подачи" id="col-Время подачи">
+                    <label class="form-check-label" for="col-Время подачи">Время подачи</label>
+                </div>
+                <div class="form-check" data-column="Подразделение">
+                    <input class="form-check-input column-checkbox" type="checkbox" value="Подразделение" id="col-Подразделение">
+                    <label class="form-check-label" for="col-Подразделение">Подразделение</label>
+                </div>
+                <div class="form-check" data-column="Ответственный">
+                    <input class="form-check-input column-checkbox" type="checkbox" value="Ответственный" id="col-Ответственный">
+                    <label class="form-check-label" for="col-Ответственный">Ответственный</label>
+                </div>
+                <div class="form-check" data-column="Заказчик">
+                    <input class="form-check-input column-checkbox" type="checkbox" value="Заказчик" id="col-Заказчик">
+                    <label class="form-check-label" for="col-Заказчик">Заказчик</label>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <h6>Работы</h6>
+                <div class="form-check" data-column="Дата начала работы">
+                    <input class="form-check-input column-checkbox" type="checkbox" value="Дата начала работы" id="col-Дата начала работы">
+                    <label class="form-check-label" for="col-Дата начала работы">Дата начала работы</label>
+                </div>
+                <div class="form-check" data-column="Дата окончания работы">
+                    <input class="form-check-input column-checkbox" type="checkbox" value="Дата окончания работы" id="col-Дата окончания работы">
+                    <label class="form-check-label" for="col-Дата окончания работы">Дата окончания работы</label>
+                </div>
+                <div class="form-check" data-column="Время начала работ">
+                    <input class="form-check-input column-checkbox" type="checkbox" value="Время начала работ" id="col-Время начала работ">
+                    <label class="form-check-label" for="col-Время начала работ">Время начала работ</label>
+                </div>
+                <div class="form-check" data-column="Время окончания работ">
+                    <input class="form-check-input column-checkbox" type="checkbox" value="Время окончания работ" id="col-Время окончания работ">
+                    <label class="form-check-label" for="col-Время окончания работ">Время окончания работ</label>
+                </div>
+                <div class="form-check" data-column="Окончание работ по факту">
+                    <input class="form-check-input column-checkbox" type="checkbox" value="Окончание работ по факту" id="col-Окончание работ по факту">
+                    <label class="form-check-label" for="col-Окончание работ по факту">Окончание работ по факту</label>
+                </div>
+                <div class="form-check" data-column="Объем работы (чч:мм)">
+                    <input class="form-check-input column-checkbox" type="checkbox" value="Объем работы (чч:мм)" id="col-Объем работы (чч:мм)">
+                    <label class="form-check-label" for="col-Объем работы (чч:мм)">Объем работы (чч:мм)</label>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <h6>Детали</h6>
+                <div class="form-check" data-column="Локация">
+                    <input class="form-check-input column-checkbox" type="checkbox" value="Локация" id="col-Локация">
+                    <label class="form-check-label" for="col-Локация">Локация</label>
+                </div>
+                <div class="form-check" data-column="Категория">
+                    <input class="form-check-input column-checkbox" type="checkbox" value="Категория" id="col-Категория">
+                    <label class="form-check-label" for="col-Категория">Категория</label>
+                </div>
+                <div class="form-check" data-column="Вид транспорта">
+                    <input class="form-check-input column-checkbox" type="checkbox" value="Вид транспорта" id="col-Вид транспорта">
+                    <label class="form-check-label" for="col-Вид транспорта">Вид транспорта</label>
+                </div>
+                <div class="form-check" data-column="Вид работ">
+                    <input class="form-check-input column-checkbox" type="checkbox" value="Вид работ" id="col-Вид работ">
+                    <label class="form-check-label" for="col-Вид работ">Вид работ</label>
+                </div>
+                <div class="form-check" data-column="Объект работ">
+                    <input class="form-check-input column-checkbox" type="checkbox" value="Объект работ" id="col-Объект работ">
+                    <label class="form-check-label" for="col-Объект работ">Объект работ</label>
+                </div>
+                <div class="form-check" data-column="Комментарий">
+                    <input class="form-check-input column-checkbox" type="checkbox" value="Комментарий" id="col-Комментарий">
+                    <label class="form-check-label" for="col-Комментарий">Комментарий</label>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <h6>Персонал</h6>
+                <div class="form-check" data-column="Статус">
+                    <input class="form-check-input column-checkbox" type="checkbox" value="Статус" id="col-Статус">
+                    <label class="form-check-label" for="col-Статус">Статус</label>
+                </div>
+                <div class="form-check" data-column="Номер удостоверения ответственного">
+                    <input class="form-check-input column-checkbox" type="checkbox" value="Номер удостоверения ответственного" id="col-Номер удостоверения ответственного">
+                    <label class="form-check-label" for="col-Номер удостоверения ответственного">Номер удостоверения ответственного</label>
+                </div>
+                <div class="form-check" data-column="ФИО стропольщика">
+                    <input class="form-check-input column-checkbox" type="checkbox" value="ФИО стропольщика" id="col-ФИО стропольщика">
+                    <label class="form-check-label" for="col-ФИО стропольщика">ФИО стропольщика</label>
+                </div>
+                <div class="form-check" data-column="Номера удостоверений стропольщиков">
+                    <input class="form-check-input column-checkbox" type="checkbox" value="Номера удостоверений стропольщиков" id="col-Номера удостоверений стропольщиков">
+                    <label class="form-check-label" for="col-Номера удостоверений стропольщиков">Номера удостоверений стропольщиков</label>
+                </div>
+                <div class="form-check" data-column="Перерывы">
+                    <input class="form-check-input column-checkbox" type="checkbox" value="Перерывы" id="col-Перерывы">
+                    <label class="form-check-label" for="col-Перерывы">Перерывы</label>
+                </div>
+            </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button id="resetColumnsBtn" type="button" class="btn btn-outline-secondary btn-sm" >Сбросить</button>
+            <button id="saveExportColumnsBtn" type="button" class="btn btn-primary btn-sm" data-bs-dismiss="modal">Сохранить</button>
+        </div>
+        </div>
+    </div>
+</div>

@@ -255,8 +255,17 @@
             flex: 1;
         }
 
-        .fio {
+        .fio-header {
             font-size: calc(0.5rem + .7vw);
+            margin: 0;
+            padding: 0;
+            margin-top: -6px;
+        }
+        .role-header{
+            font-size: calc(0.4rem + .5vw);
+            margin-top: -6px;
+            padding: 0;
+            color: #6c757d;
         }
 
         .select2-results__option {
@@ -344,6 +353,11 @@
         }
         .select2-container--bootstrap-5 .select2-selection--single .select2-selection__rendered {
             margin-top: -30px; /* Поднимаем текст немного вверх */
+        }
+        
+        .select2-container .select2-selection--single .select2-selection__rendered {
+            padding-left: 0 !important;
+            padding-right: 0 !important;
         }
 
         @media (max-width: 1570px) {
@@ -459,10 +473,9 @@
             <div class="d-flex flex-column align-items-center gap-1">
                 <p class="mb-0 text-center"><small>{{ request.user.email }}</small></p>
                 {% if profile %}
-                <p class="mb-0 fw-bold text-center fio">{{ profile.full_name }}</p>
+                <p class="mb-0 fw-bold text-center fio-header">{{ profile.full_name }}</p>
+                <p class="mb-0 text-center role-header">{{ profile.role.name }}</p>
                 {% endif %}
-                
-
             </div>
             <!-- Кнопки -->
             <div class="d-flex flex-column align-items-end gap-1">
@@ -585,132 +598,7 @@
         </div>
 
         <!-- Модальное окно -->
-        <div class="modal fade" id="exportColumnsModal" tabindex="-1" aria-labelledby="exportColumnsModalLabel" aria-hidden="true">
-            <div class="modal-dialog modal-lg">
-                <div class="modal-content">
-                <div class="modal-header justify-content-between">
-                    <h5 class="modal-title" id="exportColumnsModalLabel">Выберите столбцы для экспорта</h5>
-                    <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Отмена</button>
-                </div>
-                <div class="modal-body">
-                    <div class="row g-2">
-                    <!-- Группы столбцов -->
-                    <div class="col-md-6">
-                        <h6>Основные данные</h6>
-                        <div class="form-check" data-column="ID">
-                            <input class="form-check-input column-checkbox" type="checkbox" value="ID" id="col-ID">
-                            <label class="form-check-label" for="col-ID">ID</label>
-                        </div>
-                        <div class="form-check" data-column="Дата подачи">
-                            <input class="form-check-input column-checkbox" type="checkbox" value="Дата подачи" id="col-Дата подачи">
-                            <label class="form-check-label" for="col-Дата подачи">Дата подачи</label>
-                        </div>
-                        <div class="form-check" data-column="Время подачи">
-                            <input class="form-check-input column-checkbox" type="checkbox" value="Время подачи" id="col-Время подачи">
-                            <label class="form-check-label" for="col-Время подачи">Время подачи</label>
-                        </div>
-                        <div class="form-check" data-column="Подразделение">
-                            <input class="form-check-input column-checkbox" type="checkbox" value="Подразделение" id="col-Подразделение">
-                            <label class="form-check-label" for="col-Подразделение">Подразделение</label>
-                        </div>
-                        <div class="form-check" data-column="Ответственный">
-                            <input class="form-check-input column-checkbox" type="checkbox" value="Ответственный" id="col-Ответственный">
-                            <label class="form-check-label" for="col-Ответственный">Ответственный</label>
-                        </div>
-                        <div class="form-check" data-column="Заказчик">
-                            <input class="form-check-input column-checkbox" type="checkbox" value="Заказчик" id="col-Заказчик">
-                            <label class="form-check-label" for="col-Заказчик">Заказчик</label>
-                        </div>
-                    </div>
-
-                    <div class="col-md-6">
-                        <h6>Работы</h6>
-                        <div class="form-check" data-column="Дата начала работы">
-                            <input class="form-check-input column-checkbox" type="checkbox" value="Дата начала работы" id="col-Дата начала работы">
-                            <label class="form-check-label" for="col-Дата начала работы">Дата начала работы</label>
-                        </div>
-                        <div class="form-check" data-column="Дата окончания работы">
-                            <input class="form-check-input column-checkbox" type="checkbox" value="Дата окончания работы" id="col-Дата окончания работы">
-                            <label class="form-check-label" for="col-Дата окончания работы">Дата окончания работы</label>
-                        </div>
-                        <div class="form-check" data-column="Время начала работ">
-                            <input class="form-check-input column-checkbox" type="checkbox" value="Время начала работ" id="col-Время начала работ">
-                            <label class="form-check-label" for="col-Время начала работ">Время начала работ</label>
-                        </div>
-                        <div class="form-check" data-column="Время окончания работ">
-                            <input class="form-check-input column-checkbox" type="checkbox" value="Время окончания работ" id="col-Время окончания работ">
-                            <label class="form-check-label" for="col-Время окончания работ">Время окончания работ</label>
-                        </div>
-                        <div class="form-check" data-column="Окончание работ по факту">
-                            <input class="form-check-input column-checkbox" type="checkbox" value="Окончание работ по факту" id="col-Окончание работ по факту">
-                            <label class="form-check-label" for="col-Окончание работ по факту">Окончание работ по факту</label>
-                        </div>
-                        <div class="form-check" data-column="Объем работы (чч:мм)">
-                            <input class="form-check-input column-checkbox" type="checkbox" value="Объем работы (чч:мм)" id="col-Объем работы (чч:мм)">
-                            <label class="form-check-label" for="col-Объем работы (чч:мм)">Объем работы (чч:мм)</label>
-                        </div>
-                    </div>
-
-                    <div class="col-md-6">
-                        <h6>Детали</h6>
-                        <div class="form-check" data-column="Локация">
-                            <input class="form-check-input column-checkbox" type="checkbox" value="Локация" id="col-Локация">
-                            <label class="form-check-label" for="col-Локация">Локация</label>
-                        </div>
-                        <div class="form-check" data-column="Категория">
-                            <input class="form-check-input column-checkbox" type="checkbox" value="Категория" id="col-Категория">
-                            <label class="form-check-label" for="col-Категория">Категория</label>
-                        </div>
-                        <div class="form-check" data-column="Вид транспорта">
-                            <input class="form-check-input column-checkbox" type="checkbox" value="Вид транспорта" id="col-Вид транспорта">
-                            <label class="form-check-label" for="col-Вид транспорта">Вид транспорта</label>
-                        </div>
-                        <div class="form-check" data-column="Вид работ">
-                            <input class="form-check-input column-checkbox" type="checkbox" value="Вид работ" id="col-Вид работ">
-                            <label class="form-check-label" for="col-Вид работ">Вид работ</label>
-                        </div>
-                        <div class="form-check" data-column="Объект работ">
-                            <input class="form-check-input column-checkbox" type="checkbox" value="Объект работ" id="col-Объект работ">
-                            <label class="form-check-label" for="col-Объект работ">Объект работ</label>
-                        </div>
-                        <div class="form-check" data-column="Комментарий">
-                            <input class="form-check-input column-checkbox" type="checkbox" value="Комментарий" id="col-Комментарий">
-                            <label class="form-check-label" for="col-Комментарий">Комментарий</label>
-                        </div>
-                    </div>
-
-                    <div class="col-md-6">
-                        <h6>Персонал</h6>
-                        <div class="form-check" data-column="Статус">
-                            <input class="form-check-input column-checkbox" type="checkbox" value="Статус" id="col-Статус">
-                            <label class="form-check-label" for="col-Статус">Статус</label>
-                        </div>
-                        <div class="form-check" data-column="Номер удостоверения ответственного">
-                            <input class="form-check-input column-checkbox" type="checkbox" value="Номер удостоверения ответственного" id="col-Номер удостоверения ответственного">
-                            <label class="form-check-label" for="col-Номер удостоверения ответственного">Номер удостоверения ответственного</label>
-                        </div>
-                        <div class="form-check" data-column="ФИО стропольщика">
-                            <input class="form-check-input column-checkbox" type="checkbox" value="ФИО стропольщика" id="col-ФИО стропольщика">
-                            <label class="form-check-label" for="col-ФИО стропольщика">ФИО стропольщика</label>
-                        </div>
-                        <div class="form-check" data-column="Номера удостоверений стропольщиков">
-                            <input class="form-check-input column-checkbox" type="checkbox" value="Номера удостоверений стропольщиков" id="col-Номера удостоверений стропольщиков">
-                            <label class="form-check-label" for="col-Номера удостоверений стропольщиков">Номера удостоверений стропольщиков</label>
-                        </div>
-                        <div class="form-check" data-column="Перерывы">
-                            <input class="form-check-input column-checkbox" type="checkbox" value="Перерывы" id="col-Перерывы">
-                            <label class="form-check-label" for="col-Перерывы">Перерывы</label>
-                        </div>
-                    </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button id="resetColumnsBtn" type="button" class="btn btn-outline-secondary btn-sm" >Сбросить</button>
-                    <button id="saveExportColumnsBtn" type="button" class="btn btn-primary btn-sm" data-bs-dismiss="modal">Сохранить</button>
-                </div>
-                </div>
-            </div>
-        </div>
+        {% include 'modals/export_modal.html' %}
 
         <!-- Таблица заявок -->
         <div class="table-container">
@@ -773,7 +661,7 @@
                                 <span class="text">Подробнее</span>
                             </a>
 
-                            {% if profile and profile.role.code in 'operator,customer' and req.status.code == 'new' or req.status.code == 'assigned' %}
+                            {% if profile and profile.role.code in 'operator,customer' and req.status.code in 'new,assigned' %}
                                 <!-- Редактировать -->
                                 <a href="{% url 'request_update' req.id %}" class="btn btn-sm btn-edit me-1 btn-responsive d-flex align-items-center gap-1">
                                 <i class="bi bi-pencil-square"></i>
@@ -796,7 +684,7 @@
                                     <span class="text">Дублировать</span>
                                 </a>
                             {% endif %}
-                            </td>
+                        </td>
                         <td>{{ req.id }}</td>
                         <td>
                             <small class="text-muted">
@@ -831,20 +719,48 @@
 
                         <!-- Статус -->
                         <td class="status">
-                        {% if profile.role.code == 'operator' %}
-                            <select class="form-select form-select-sm change-status" data-id="{{ req.id }}">
-                            {% for s in statuses %}
-                                <option value="{{ s.id }}" data-code="{{ s.code }}" {% if s.id == req.status.id %}selected{% endif %}>
-                                {{ s.name }}
-                                </option>
-                            {% endfor %}
-                            </select>
-                        {% else %}
-                            <span class="status-badge change-status status-{{ req.status.code }}" data-code="{{ req.status.code }}">
-                            {{ req.status.name }}
-                            </span>
-                        {% endif %}
+                            {% if profile.role.code == 'operator' %}
+                                <!-- Оператор может менять статус -->
+                                <select class="form-select form-select-sm change-status" data-id="{{ req.id }}">
+                                    {% for s in statuses %}
+                                        <option value="{{ s.id }}" data-code="{{ s.code }}" {% if s.id == req.status.id %}selected{% endif %}>
+                                            {{ s.name }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+
+                            {% elif profile.role.code == 'customer' and req.status.code == 'assigned' and req.date_start_ended_allowed %}
+                                <!-- Заказчик может менять статус только из assigned -->
+                                <select class="form-select form-select-sm change-status" data-id="{{ req.id }}">
+                                    {% for s in statuses %}
+                                        {% if s.code in 'assigned,work,cancel' %}
+                                            <option value="{{ s.id }}" data-code="{{ s.code }}" {% if s.id == req.status.id %}selected{% endif %}>
+                                                {{ s.name }}
+                                            </option>
+                                        {% endif %}
+                                    {% endfor %}
+                                </select>
+
+                            {% elif profile.role.code == 'customer' and req.status.code == 'work' and req.date_end_ended_allowed %}
+                                <!-- Заказчик может менять статус только из work -->
+                                <select class="form-select form-select-sm change-status" data-id="{{ req.id }}">
+                                    {% for s in statuses %}
+                                        {% if s.code in 'work,done,cancel' %}
+                                            <option value="{{ s.id }}" data-code="{{ s.code }}" {% if s.id == req.status.id %}selected{% endif %}>
+                                                {{ s.name }}
+                                            </option>
+                                        {% endif %}
+                                    {% endfor %}
+                                </select>
+
+                            {% else %}
+                                <!-- Во всех остальных случаях просто текст (без возможности менять) -->
+                                <span class="status-badge change-status status-{{ req.status.code }}" data-code="{{ req.status.code }}">
+                                    {{ req.status.name }}
+                                </span>
+                            {% endif %}
                         </td>
+
 
                         <!-- Заказчик и Подразделение -->
                         <td>{{ req.customer.full_name }}</td>
@@ -852,25 +768,28 @@
 
                         <!-- Ответственный -->
                         <td class="responsible">
-                        {% if profile.role.code == 'operator' %}
-                            <select class="form-select form-select-sm change-responsible" data-id="{{ req.id }}" style="width: 140px;">
-                            <option value="">—</option>
-                            {% for u in responsibles %}
-                                <option value="{{ u.id }}" {% if req.responsible and u.id == req.responsible.id %}selected{% endif %} data-position="{{ u.position }}">
-                                {{ u.full_name }}
-                                </option>
-                            {% endfor %}
-                            </select>
-                        {% else %}
-                            {% if req.responsible %}
-                            {{ req.responsible.full_name }} — {{ req.responsible.position }}
+                            {% if profile.role.code == 'operator' and req.status.code in 'new, assigned' %}
+                                <select class="change-responsible" data-id="{{ req.id }}">
+                                    <option value="">—</option>
+                                    {% for u in responsibles %}
+                                        <option value="{{ u.id }}"
+                                                {% if req.responsible and u.id == req.responsible.id %}selected{% endif %}
+                                                data-position="{{ u.position }}">
+                                            {{ u.full_name }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
                             {% else %}
-                            —
+                                {% if req.responsible %}
+                                    <div>
+                                        <div>{{ req.responsible.full_name }}</div>
+                                        <small class="text-muted">{{ req.responsible.position }}</small>
+                                    </div>
+                                {% else %}
+                                    —
+                                {% endif %}
                             {% endif %}
-                        {% endif %}
                         </td>
-                    </div>
-
 
                         <!-- Перерывы -->
                         <td>
@@ -1148,7 +1067,7 @@ $(function(){
     });
 
     // ========================
-    // Цвета статусов
+    // инциализация и цвета статусов
     // ========================
     function applyStatusColor($el) {
         $el.removeClass('status-new status-assigned status-work status-done status-cancel');
@@ -1177,7 +1096,11 @@ $(function(){
             })
             .then(r => r.json())
             .then(js => { 
-                if (!js.success) alert('Ошибка: ' + js.error); 
+                if (!js.success){
+                    alert('Ошибка: ' + js.error);
+                }  else{
+                    location.reload();
+                }
             });
         });
     }
@@ -1189,9 +1112,14 @@ $(function(){
         function formatResponsible(option) {
             if (!option.id) return option.text;
             const position = $(option.element).data('position') || '';
-            return $(`<div><div>${option.text}</div><small class="text-muted">${position}</small></div>`);
+            const name = option.text;
+            return $(`
+                <div class="d-flex flex-column p-0 m-0">
+                    <div><strong>${name}</strong></div>
+                    <small class="text-muted">${position}</small>
+                </div>
+            `);
         }
-
         $('.change-responsible').select2({
             theme: 'bootstrap-5',
             placeholder: 'Выберите ответственного',
