@@ -57,10 +57,12 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     
     # Сторонние приложения
-    'mptt',  # Для работы с деревьями (Modified Preorder Tree Traversal)
+    'mptt',  # для работы с деревьями
+    'debug_toolbar', # для отладки
     
     # Локальные приложения
-    'core',  # Основное приложение проекта
+    'core',  # основное приложение проекта
+    'widget_tweaks',
 ]
 
 # ======================
@@ -71,11 +73,15 @@ MIDDLEWARE = [
     'django.contrib.sessions.middleware.SessionMiddleware',  # Сессии
     'django.middleware.common.CommonMiddleware',  # Базовые HTTP операции
     'django.middleware.csrf.CsrfViewMiddleware',  # Защита от CSRF
+    'debug_toolbar.middleware.DebugToolbarMiddleware', # Панель инструментов отладки
     'django.contrib.auth.middleware.AuthenticationMiddleware',  # Аутентификация
     'django.contrib.messages.middleware.MessageMiddleware',  # Система сообщений
     'django.middleware.clickjacking.XFrameOptionsMiddleware',  # Защита от clickjacking
 ]
 
+INTERNAL_IPS = [
+    "127.0.0.1",
+]
 # Основные URL и аутентификация
 ROOT_URLCONF = 'backend.urls'
 LOGIN_URL = 'login'

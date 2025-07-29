@@ -1,5 +1,5 @@
 from django.contrib import admin
-from django.urls import path
+from django.urls import include, path
 from django.views.generic.base import RedirectView
 from core.views import (
     login_view, 
@@ -9,10 +9,9 @@ from core.views import (
     request_detail_view,
     request_create_view,
     request_update_view,
-    request_cancel_view,
     update_status,
     update_responsible,
-    request_double,
+    request_double_view,
     custom_405,
     custom_401,
     custom_404,   
@@ -20,6 +19,8 @@ from core.views import (
     custom_500,
     custom_400,
 )
+from debug_toolbar.toolbar import debug_toolbar_urls
+
 
 urlpatterns = [
     path('', redirect_after_login_view, name='index'),
@@ -34,13 +35,11 @@ urlpatterns = [
     path('requests/<int:pk>/', request_detail_view, name='request_detail'),
     path('requests/create/', request_create_view, name='request_create'),
     path('requests/<int:pk>/edit/', request_update_view, name='request_update'),
-    path('requests/<int:pk>/cancel/', request_cancel_view, name='request_cancel'),
-    path('requests/double/<int:pk>/', request_double, name='request_double'),
+    path('requests/double/<int:pk>/', request_double_view, name='request_double'),
     path('requests/update/<int:pk>/', request_update_view, name='request_update'),
     path('api/update_status/', update_status, name='update_status'),
     path('api/update_responsible/', update_responsible, name='update_responsible'),
-
-]
+] + debug_toolbar_urls()
 
 # Обработчики ошибок
 handler405 = 'core.views.custom_405'

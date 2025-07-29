@@ -23,9 +23,10 @@ from django.utils.decorators import decorator_from_middleware
 from django.middleware.csrf import CsrfViewMiddleware
 from django.views.decorators.csrf import csrf_exempt
 from django.db.models import Q
-from django.core.exceptions import PermissionDenied
+from django.core.exceptions import PermissionDenied, ValidationError
 import logging
-from django.core.exceptions import PermissionDenied
+
+from core.utils import get_profile_and_people, get_reference_data
 # Формы
 from .forms import RequestForm, LoginForm
 
@@ -45,7 +46,6 @@ from core.models import (
     OrganizationLocation as CoreOrgLocation,
     Category as CoreCategory,
 )
-
 
 # ———————————— Caching Helpers ————————————
 def _get_cached(key, queryset_fn, timeout=60 * 15):
@@ -141,6 +141,7 @@ def request_list_view(request):
         'status',
         'location',
         'equipment_category',
+        'customer__user',
         'customer__department__organization',
         'responsible',
     )
@@ -172,6 +173,8 @@ def request_list_view(request):
     for req in qs:
         req.break_periods_json = mark_safe(json.dumps(req.break_periods or [])) 
         requests_with_serialized_breaks.append(req)
+
+    locations = OrganizationLocation.objects.all()
 
     # --- Ответственные (только для оператора) ---
     responsibles = None
@@ -215,9 +218,6 @@ def update_status(request):
             elif req.status.code == 'work' and req.date_end_ended_allowed:
                 can_update = new_status.code in ['work', 'done', 'cancel']
 
-        if not can_update:
-            return JsonResponse({'success': False, 'error': 'Нет прав на изменение статуса.'})
-
         req.status = new_status
         req.save(update_fields=['status'])
 
@@ -254,288 +254,234 @@ def update_responsible(request):
 @login_required
 def request_detail_view(request, pk):
     req = get_object_or_404(
-        Request.objects.select_related('customer__department__organization'),
+        Request.objects.select_related(
+            # === Заказчик (customer) ===
+            'customer__user',  # для full_name
+            'customer__department__organization',  # для department.name и organization
+            'customer__location',  # для location (OrganizationLocation)
+
+            # === Ответственный (responsible) ===
+            'responsible__user',  # для full_name
+            'responsible__department__organization',  # для department.name
+            'responsible__location',  # для location
+
+            # === Прямые связи ===
+            'status',      # статус заявки
+            'equipment_category',    # категория техники
+            'location',    # локация из заявки (OrganizationLocation)
+        ),
         pk=pk
     )
     user = request.user
     profile = getattr(user, 'profile', None)
 
-    # суперпользователь и админ
+    # Проверка прав доступа
     if user.is_superuser or _has_role(user, 'admin'):
-        return render(request, 'requests/request_detail.html', {'req': req})
+        pass  # разрешено
+    elif _has_role(user, 'operator'):
+        pass  # разрешено
+    elif _has_role(user, 'customer'):
+        if req.customer != profile:
+            raise PermissionDenied("You can only view your applications")
+    elif _has_role(user, 'employee'):
+        if req.customer.department.organization != profile.department.organization:
+            raise PermissionDenied("You can only view your organization's applications")
+    elif not profile:
+        pass  # разрешено (без профиля)
+    else:
+        raise PermissionDenied("No rights to view the application")
 
-    # оператор = полный доступ (только просмотр)
-    if _has_role(user, 'operator'):
-        return render(request, 'requests/request_detail.html', {'req': req})
-
-    # заказчик — только свои заявки
-    if _has_role(user, 'customer'):
-        if req.customer == profile:
-            return render(request, 'requests/request_detail.html', {'req': req})
-        raise PermissionDenied("You can only view your applications")
-
-    # сотрудник — заявки своей организации
-    if _has_role(user, 'employee'):
-        if req.customer.department.organization == profile.department.organization:
-            return render(request, 'requests/request_detail.html', {'req': req})
-        raise PermissionDenied("You can only view your organization's applications")
-
-    # без профиля — как сотрудник
-    if not profile:
-        return render(request, 'requests/request_detail.html', {'req': req})
-
-    raise PermissionDenied("No rights to view the application")
+    return render(request, 'requests/request_detail.html', {'req': req})
 
 @login_required
 def request_create_view(request):
-    user    = request.user
-    profile = getattr(user, 'profile', None)
-    categories = Category.objects.all()
-    # --- Список заказчиков (роль customer в той же локации) ---
-    customers = Profile.objects.filter(
-        location=profile.location,
-        role__code='customer'
-    ).select_related('user')
+    user = request.user
+    profile, responsibles, customers = get_profile_and_people(user)
+    ref = get_reference_data()
 
-    # --- Список ответственных ---
-    if profile and profile.role.code == 'customer':
-        responsibles = Profile.objects.filter(
-            department__organization=profile.department.organization,
-            location=profile.location
-        ).exclude(role__code__in=['operator', 'admin']).select_related('user')
-    else:
-        responsibles = Profile.objects.filter(
-            location=profile.location
-        ).exclude(role__code__in=['operator', 'admin']).select_related('user')
+    # Только superuser/admin/operator/customer
+    if not (user.is_superuser or (profile and profile.role.code in ('admin','operator','customer'))):
+        raise PermissionDenied()
 
-    # --- Проверка прав: superuser, admin, operator или customer ---
-    allowed = (
-        user.is_superuser
-        or (profile and profile.role.code in ('admin', 'operator', 'customer'))
+    # Всегда дефолтный статус = 'new' и локация = профильная
+    new_status = ref['statuses_dict']['new']
+    initial = {
+        'status':   new_status.id,
+        'location': profile.location.id if profile else None,
+    }
+
+    form = RequestForm(
+        data=request.POST or None,
+        initial=initial,
+        profile=profile,
+        locations=ref['locations'],
+        categories=ref['categories'],
+        statuses=ref['statuses'],
+        new_status=new_status,
     )
-    if not allowed:
-        raise PermissionDenied("No rights to create an application")
 
-    show_lifting = False
+    # вычисляем show_lifting сразу из incoming данных
+    cat = form.data.get('equipment_category') or form.initial.get('equipment_category')
+    show_lifting = bool(cat and ref['category_codes'].get(int(cat)) == 'lifting')
 
-    if request.method == 'POST':
-        form = RequestForm(request.POST, user=user)
+    if request.method == 'POST' and form.is_valid():
+        req = form.save(commit=False)
 
-        # Если оператор, требуем выбор заказчика
-        if profile and profile.role.code == 'operator' and not request.POST.get('customer'):
-            form.add_error('customer', 'Выберите заказчика')
+        # customer: оператор выбирает, остальные — свой профиль
+        if profile and profile.role.code == 'operator':
+            customer = form.cleaned_data.get('customer')
+            req.customer = customer
+        else:
+            req.customer = profile
 
-
-        if form.is_valid():
-            req = form.save(commit=False)
-
-            # оператор сам выбирает customer, остальные — свой профиль
-            if profile.role.code == 'operator':
-                req.customer = form.cleaned_data['customer']
-            else:
-                req.customer = profile
-
-            # локация    
-            req.location = profile.location
-
-            # статус new
-            if not req.status: 
-                req.status = Status.objects.filter(code='new').first()
-            
-            req.save()
-
-            messages.success(request, 'Заявка успешно создана')
-            return redirect('request_list')
-        # если не валидна — сразу отрисовываем тот же шаблон
-        show_lifting = (form.cleaned_data.get('equipment_category') and
-                        form.cleaned_data['equipment_category'].code == 'lifting')
-        return render(request, 'requests/request_form.html', {
-            'form': form,
-            'show_lifting_fields': show_lifting,
-            'categories': categories,
-            'responsibles': responsibles,
-            'customers': customers,
-            'profile': profile,
-        })
-
-    else:
-        # GET-запрос — инициализируем пустую форму
-        initial = {}
-        if profile:
-            initial['location'] = profile.location_id
-
-        form = RequestForm(initial=initial, user=user)
-        if profile:
-            form.fields['location'].widget.attrs['readonly'] = True
+        req.save()
+        messages.success(request, "Заявка создана")
+        return redirect('request_list')
 
     return render(request, 'requests/request_form.html', {
-        'form': form,
-        'show_lifting_fields': show_lifting,
-        'categories': categories,
-        'responsibles': responsibles,
-        'customers': customers,
-        'profile': profile,
+        'form':               form,
+        'locations':          ref['locations'],
+        'categories':         ref['categories'],
+        'statuses':           ref['statuses'],
+        'category_codes':     ref['category_codes'],
+        'responsibles':       responsibles,
+        'customers':          customers,
+        'profile':            profile,
+        'current_category_id': cat, 
     })
 
 @login_required
-def request_cancel_view(request, pk):
+def request_update_view(request, pk):
     user = request.user
-    profile = getattr(user, 'profile', None)
-    if not profile or profile.role.code not in ('operator', 'customer'):
-        raise PermissionDenied("No cancellation rights")
+    profile, responsibles, customers = get_profile_and_people(user)
+    ref = get_reference_data()
 
-    req = get_object_or_404(Request.objects.select_related('status'), pk=pk)
+    # Проверка доступа
+    if not any([
+        user.is_superuser,
+        _has_role(user, 'admin'),
+        _has_role(user, 'operator'),
+        _has_role(user, 'customer'),
+    ]):
+        raise PermissionDenied("Нет прав для редактирования")
 
-    # customer – только свои
-    if profile.role.code == 'customer' and req.customer != profile:
-        raise PermissionDenied("You can only cancel your applications")
+    # Загружаем заявку
+    req = get_object_or_404(
+        Request.objects.select_related(
+            'customer__user', 'customer__department__organization', 'customer__location', 'customer__role',
+            'responsible__user', 'responsible__department__organization', 'responsible__location', 'responsible__role',
+            'status', 'equipment_category', 'location'
+        ),
+        pk=pk
+    )
 
-    if req.status.code == 'work':
-        messages.error(request, "Нельзя отменить заявку в работе")
-        return redirect('request_detail', pk=pk)
+    # Доступ по локации/статусу
+    if _has_role(user, 'operator') and req.location != profile.location:
+        raise PermissionDenied("Редактировать можно только по своей локации")
+    if _has_role(user, 'customer') and (req.customer != profile or req.status.code == 'work'):
+        raise PermissionDenied("Редактировать можно только свои черновики")
 
-    try:
-        cancel = Status.objects.get(code='cancel')
-        req.status = cancel
-        req.save()
-        messages.success(request, "Заявка отменена")
-    except Status.DoesNotExist:
-        messages.error(request, "Статус 'cancel' не найден")
-        return redirect('request_list')
-
-    return redirect('request_detail', pk=pk)
-
-@login_required
-def request_update_view(request, pk=None):
-    user = request.user
-    profile = getattr(user, 'profile', None)
-    categories = Category.objects.all()
-
-    # --- Список ответственных ---
-    if profile and profile.role.code == 'customer':
-        responsibles = Profile.objects.filter(
-            department__organization=profile.department.organization,
-            location=profile.location
-        ).exclude(role__code__in=['operator', 'admin']).select_related('user')
-    else:
-        responsibles = Profile.objects.filter(
-            location=profile.location
-        ).exclude(role__code__in=['operator', 'admin']).select_related('user')
-
-
-    customers = Profile.objects.filter(
-        location=profile.location,
-        role__code='customer'
-    ).select_related('user')
-
-    # проверка прав
-    if not any([user.is_superuser,
-                _has_role(user, 'admin'),
-                _has_role(user, 'operator'),
-                _has_role(user, 'customer')]):
-        raise PermissionDenied("No editing rights")
-
-    # получаем request
-    req = None
-    if pk:
-        req = get_object_or_404(Request.objects.select_related(
-            'customer', 'location', 'status', 'customer__department__organization'
-        ), pk=pk)
-
-        # оператор может только по своей локации
-        if _has_role(user, 'operator') and req.location != profile.location:
-            raise PermissionDenied("You can edit only by your location")
-
-        # customer: только свои заявки и не в работе
-        if _has_role(user, 'customer') and (req.customer != profile or req.status.code == 'work'):
-            raise PermissionDenied("No rights to edit this application")
-
-    # работа с формой
+    # Обработка POST
     if request.method == 'POST':
-        form = RequestForm(request.POST, instance=req, user=user)
+        form = RequestForm(
+            request.POST,
+            instance=req,
+            user=user,
+            profile=profile,
+            locations=ref['locations'],
+            categories=ref['categories'],
+            statuses=ref['statuses'],
+        )
         if form.is_valid():
-            new_req = form.save(commit=False)
+            updated = form.save(commit=False)
 
-            # только если текущий пользователь - customer, фиксируем заказчика
-            if _has_role(user, 'customer'):
-                new_req.customer = profile
+            # Устанавливаем customer до валидации модели
+            if profile.role.code == 'operator':
+                customer = form.cleaned_data.get('customer')
+                if not customer:
+                    form.add_error('customer', 'Укажите заказчика')
+                    # заново отрисуем форму с ошибкой, не вызывая save()
+                    return render(request, 'requests/request_form.html', {
+                        'form': form,
+                        'update': True,
+                        'responsibles': responsibles,
+                        'customers': customers,
+                        'profile': profile,
+                        'is_duplicate': 'original_pk' in request.GET,
+                        'show_lifting_fields': show_lifting,
+                        'locations': ref['locations'],
+                        'categories': ref['categories'],
+                        'statuses': ref['statuses'],
+                        'category_codes': ref['category_codes'],
+                        'current_category_id': cat_id,
+                    })
+                updated.customer = customer
+            else:
+                # заказчик или админ
+                updated.customer = profile
 
-            new_req.save()
-
-            # сохраняем
-            new_req.save()
-            messages.success(request, 'Заявка успешно сохранена')
-            return redirect('request_detail', pk=new_req.pk)
+            # Теперь можно сохранить
+            updated.save()
+            messages.success(request, "Заявка обновлена")
+            return redirect('request_detail', pk=updated.pk)
         else:
-            messages.error(request, 'Проверьте корректность полей')
+            messages.error(request, "Проверьте корректность полей")
 
-        # для невалидного POST определяем lifting из POST
         cat_id = request.POST.get('equipment_category')
-    else:
-        # GET
-        form = RequestForm(instance=req, user=user) if req else RequestForm(user=user)
-        # Для GET запроса явно устанавливаем начальное значение категории
-        if req and req.equipment_category:
-            form.initial['equipment_category'] = req.equipment_category.id
 
-        # для customer делаем readonly…
+    else:
+        form = RequestForm(
+            instance=req,
+            user=user,
+            locations=ref['locations'],
+            categories=ref['categories'],
+            statuses=ref['statuses'],
+        )
+        # для template JS
+        cat_id = req.equipment_category_id
+        # customer не может менять статус
         if _has_role(user, 'customer'):
             form.fields.pop('status', None)
-            editable = {
-                'is_completed_fact',
-                'comment',
-                'work_type',
-                'transport_type',
-                'work_object',
-            }
+            editable = {'is_completed_fact', 'comment', 'work_type', 'transport_type', 'work_object'}
             for fname in list(form.fields):
                 if fname not in editable:
                     form.fields[fname].widget.attrs['readonly'] = True
                     form.fields[fname].required = False
 
-        # для GET берем категорию из instance
-        cat_id = req.equipment_category_id if req else None
-    
-    # вычисляем, показывать ли lifting-поля
-    show_lifting = False
-    if cat_id:
-        try:
-            cat = Category.objects.get(pk=cat_id)
-            show_lifting = (cat.code == 'lifting')
-        except Category.DoesNotExist:
-            show_lifting = False
+    show_lifting = bool(cat_id and ref['category_codes'].get(int(cat_id)) == 'lifting')
 
     return render(request, 'requests/request_form.html', {
         'form': form,
-        'update': bool(req),
+        'update': True,
         'responsibles': responsibles,
         'customers': customers,
         'profile': profile,
         'is_duplicate': 'original_pk' in request.GET,
         'show_lifting_fields': show_lifting,
-        'categories': categories,
-        'current_category_id': cat_id, 
+        'locations': ref['locations'],
+        'categories': ref['categories'],
+        'statuses': ref['statuses'],
+        'category_codes': ref['category_codes'],
+        'current_category_id': cat_id,
     })
 
 @login_required
-def request_double(request, pk):
-    """Создаёт дубликат (черновик) заявки и обрабатывает его сохранение."""
-    original = get_object_or_404(Request.objects.select_related('customer'), pk=pk)
+def request_double_view(request, pk):
     user = request.user
-    profile = getattr(user, 'profile', None)
+    profile, responsibles, customers = get_profile_and_people(user)
+    ref = get_reference_data()
 
-    if not profile:
-        raise PermissionDenied("Нет профиля")
+    # 1. Загружаем оригинал
+    original = get_object_or_404(
+        Request.objects.select_related(
+            'customer__user', 'customer__department__organization', 'customer__location',
+            'responsible__user', 'responsible__department__organization', 'responsible__location',
+            'status', 'equipment_category', 'location',
+        ),
+        pk=pk
+    )
 
-    # Получаем список заказчиков (для оператора)
-    customers = None
-    if profile.role.code == 'operator':
-        customers = Profile.objects.filter(
-            role__code='customer',
-            department__organization=profile.department.organization
-        ).select_related('user').order_by('user__last_name')
-
-    # Создаем дубликат (без сохранения в БД)
+    # 2. Создаём дубликат без сохранения
     duplicate = Request(
         location=original.location,
         date_start=original.date_start,
@@ -552,48 +498,50 @@ def request_double(request, pk):
         responsible_certificate=original.responsible_certificate,
         rigger_name=original.rigger_name,
         rigger_certificates=original.rigger_certificates,
-        customer=original.customer,  # Сохраняем оригинального заказчика
+        customer=original.customer,
         is_completed_fact=original.is_completed_fact,
+        status=ref['statuses_dict'].get('new'),
     )
 
-    # Устанавливаем статус "новый"
-    duplicate.status = Status.objects.filter(code="new").first()
-
-    # Получаем ответственных (для выпадающего списка)
-    responsibles = Profile.objects.filter(
-        location=profile.location
-    ).exclude(role__code__in=['operator', 'admin']).select_related('user')
-
-    categories = Category.objects.all()
-
+    # 3. Обработка формы
     if request.method == 'POST':
-        form = RequestForm(request.POST, instance=duplicate, user=user)
+        form = RequestForm(
+            request.POST,
+            instance=duplicate,
+            user=user,
+            locations=ref['locations'],
+            categories=ref['categories'],
+            statuses=ref['statuses'],
+        )
+        cat_id = request.POST.get('equipment_category')
+
         if form.is_valid():
             new_req = form.save(commit=False)
-            # Для оператора сохраняем выбранного заказчика, для других - оригинального
-            if profile.role.code == 'operator':
-                new_req.customer_id = request.POST.get('customer', original.customer_id)
+            # Оператор может указать заказчика, остальные — берут текущий профиль
+            if profile and profile.role.code == 'operator':
+                customer_id = request.POST.get('customer')
+                if customer_id:
+                    new_req.customer_id = int(customer_id)
             else:
                 new_req.customer = profile
-            
+
             new_req.save()
-            messages.success(request, "Дубликат заявки успешно сохранён")
+            messages.success(request, "Дубликат заявки сохранён")
             return redirect('request_detail', pk=new_req.pk)
         else:
-            messages.error(request, "Проверьте правильность заполнения полей")
-        
-        cat_id = request.POST.get('equipment_category')
+            messages.error(request, "Проверьте корректность заполнения полей")
     else:
-        form = RequestForm(instance=duplicate, user=user)
+        form = RequestForm(
+            instance=duplicate,
+            user=user,
+            locations=ref['locations'],
+            categories=ref['categories'],
+            statuses=ref['statuses'],
+        )
         cat_id = duplicate.equipment_category_id
 
-    # Определяем, показывать ли блок для подъемных работ
-    show_lifting = False
-    if cat_id:
-        try:
-            show_lifting = (Category.objects.get(pk=cat_id).code == 'lifting')
-        except Category.DoesNotExist:
-            pass
+    # 4. Логика показа lifting‑блоков
+    show_lifting = bool(cat_id and ref['category_codes'].get(int(cat_id)) == 'lifting')
 
     return render(request, 'requests/request_form.html', {
         'form': form,
@@ -603,7 +551,11 @@ def request_double(request, pk):
         'customers': customers,
         'profile': profile,
         'show_lifting_fields': show_lifting,
-        'categories': categories,
+        'locations': ref['locations'],
+        'categories': ref['categories'],
+        'statuses': ref['statuses'],
+        'category_codes': ref['category_codes'],
+        'current_category_id': cat_id,
     })
 
 # ———————— Ошибки ————————

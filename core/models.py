@@ -326,15 +326,13 @@ class Request(models.Model):
     def clean(self):
             super().clean()
             errors = {}
-
-            # 1) Убедимся, что даты заполнены
-            if not (self.date_start and self.date_end):
-                errors['date_start'] = 'Укажите даты начала и окончания'
-            # 2) Убедимся, что время заполнено
-            elif not (self.time_start and self.time_end):
-                errors['time_start'] = 'Укажите время начала и окончания'
-            else:
-                # 3) Сравним реальные метки времени
+            
+            # Проверка, что окончание позже начала
+            if (
+                'date_start' not in errors and
+                'time_start' not in errors and
+                self.date_start and self.date_end and self.time_start and self.time_end
+            ):
                 dt_start = datetime.combine(self.date_start, self.time_start)
                 dt_end   = datetime.combine(self.date_end,   self.time_end)
                 if dt_end <= dt_start:
@@ -373,11 +371,3 @@ class Request(models.Model):
         """Автоматическая обработка перед сохранением"""
         self.full_clean()
         super().save(*args, **kwargs)
-
-# ----------------------------------------
-# import telegram
-# from django.conf import settings
-
-# def send_telegram_message(chat_id, text):
-#     bot = telegram.Bot(token=settings.TELEGRAM_BOT_TOKEN)
-#     bot.send_message(chat_id=chat_id, text=text)

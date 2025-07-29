@@ -1,9 +1,10 @@
+{% load custom_tags %}
+{% load static %}
 <!DOCTYPE html>
 <html lang="ru">
-
 <head>
     <meta charset="UTF-8" />
-    <title>Создать заявку</title>
+    <title>Заявка</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
 
     <!-- Bootstrap 5 CSS -->
@@ -16,348 +17,15 @@
     <link href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" rel="stylesheet" />
 
     <!-- Иконки -->
-    {% load static %}
     <link rel="icon" href="{% static 'img/favicon.png' %}" type="image/png" />
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
-
-    <style>
-        body {
-            background-color: #f8f9fa;
-            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-        }
-
-        .form-container {
-            max-width: 100%;
-            margin: 0 auto;
-            background-color: white;
-            padding: 1rem 2.5rem;
-            border-radius: 16px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-        }
-
-        .form-title {
-            position: relative;
-            display: inline-block;
-            padding-bottom: 6px;
-            white-space: nowrap;
-            margin-bottom: 20px;
-        }
-
-        .form-title::after {
-            content: "";
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 3px;
-            transform: scaleX(1);
-            transform-origin: left center;
-            background: linear-gradient(90deg, #8e3798, #574ca1, #4da4cb);
-            transition: transform 0.3s ease;
-        }
-
-        .form-label {
-            font-weight: 600;
-            color: #5a5a5a;
-            margin-bottom: 0;
-            font-size: calc(0.7rem + .4vw);
-        }
-
-        input,
-        select,
-        textarea {
-            border-radius: 8px;
-            border: 1px solid #ced4da;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-            transition: all 0.3s ease;
-            height: 40px;
-            width: 100%;
-            padding: 6px 12px;
-        }
-
-        input#id_is_completed_fact{
-            padding: 0 !important;
-        }
-
-        select {
-            padding: 0.375rem 0.75rem;
-        }
-
-        .form-control:focus {
-            border-color: #574ca1;
-            box-shadow: 0 0 0 0.2rem rgba(87, 76, 161, 0.25);
-        }
-
-        .invalid-feedback {
-            color: #dc3545;
-            font-size: calc(0.5rem + .4vw);
-            margin-top: 0.25rem;
-        }
-
-        .back-link {
-            display: inline-block;
-            text-decoration: none;
-            color: #574ca1;
-            font-weight: 500;
-            transition: color 0.3s ease;
-        }
-
-        .back-link:hover {
-            color: #4da4cb;
-        }
-        .btn-gradient {
-            background: transparent;
-            color: #574ca1;
-            border: 1px solid #574ca1;
-            margin-top: 2px;
-        }
-
-        .btn-gradient:hover {
-            opacity: 0.9;
-            color: white;
-            background: linear-gradient(135deg, #574ca1, #4da4cb);
-        }
-        .form-section {
-            background-color: #f8f9fa;
-            border-radius: 12px;
-            padding: 1rem;
-            margin-bottom: 1rem;
-            border-left: 4px solid #8e3798;
-        }
-
-        .form-section h6 {
-            color: #5a5a5a;
-            font-weight: 600;
-            margin-bottom: calc(0.6rem + 0.3vw);
-            font-size: calc(0.7rem + .7vw);
-        }
-
-        .input-group-text {
-            background: #f1f3f5;
-            border-radius: 8px 0 0 8px;
-            border-right: none;
-        }
-
-        .form-control.input-group-lg {
-            border-radius: 0 8px 8px 0;
-        }
-        
-        .select2-container--bootstrap-5 .select2-selection--single {
-            background-color: #fff;         
-            border: 1px solid #ced4da;    
-            border-radius: 8px;            
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-            height: calc(1rem + 4vh);                
-            padding: 6px 12px;             
-            width: 100% !important;    
-            transition: all 0.3s ease;
-        }
-
-        .form-check-label {
-            margin-top: 0; 
-            margin-bottom: 0;
-            font-size: calc(0.6rem + .4vw);
-        }
-
-        .form-check-input {
-            width: 20px;
-            height: 20px;
-            border: 1px solid #ced4da;
-            border-radius: 6px;
-            background-color: white;
-            appearance: none;
-            -webkit-appearance: none;
-            -moz-appearance: none;
-            transition: all 0.2s ease-in-out;
-            position: relative;
-        }
-
-        .form-check-input:checked {
-            background-color: #574ca1;
-            border-color: #574ca1;
-        }
-
-        .form-check-input:checked::after {
-            content: "";
-            position: absolute;
-            top: 2px;
-            left: 6px;
-            width: 6px;
-            height: 12px;
-            border: solid white;
-            border-width: 0 3px 3px 0;
-            transform: rotate(45deg);
-        }
-
-        .form-check-input:focus {
-            box-shadow: 0 0 0 0.2rem rgba(87, 76, 161, 0.25);
-        }
-
-        .form-check-input:checked[type="checkbox"] {
-            background-image: none !important;
-        }
-
-
-        .select2-container--default .select2-selection--single:focus {
-            border-color: #574ca1 !important;
-            box-shadow: 0 0 0 0.2rem rgba(87, 76, 161, 0.25);
-        }
-
-        .flatpickr-input {
-            background-color: white !important;
-            border-radius: 8px;
-            border: 1px solid #ced4da;
-            padding: 0.375rem 0.75rem;
-        }
-
-        .lifting-fields {
-            animation: fadeIn 0.3s ease-out;
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .form-control[readonly] {
-            background-color: #e9ecef !important;
-        }
-
-        .text-muted.small-hint {
-            font-size: 0.85em;
-            color: #868e96 !important;
-        }
-
-        .form-group {
-            margin-bottom: 1.5rem;
-        }
-
-        .form-floating {
-            margin-bottom: 1rem;
-        }
-
-        .star {
-            color: #dc3545;
-        }
-
-        .responsive-cancel-btn .btn-text {
-            margin-left: 8px;
-        }
-
-
-        /* Текст и стрелка внутри селекта */
-        .select2-container--bootstrap-5 .select2-selection__rendered {
-            line-height: 1.5;               
-            color: #495057;
-        }
-
-        .select2-container--bootstrap-5 .select2-selection__arrow {
-            height: 100%;
-        }
-
-        /* При фокусе — подсветка, как у form-control:focus */
-        .select2-container--bootstrap-5 .select2-selection--single:focus,
-        .select2-container--bootstrap-5 .select2-selection--single:focus-within {
-            border-color: #574ca1;
-            box-shadow: 0 0 0 0.2rem rgba(87, 76, 161, 0.25);
-            outline: none;
-        }
     
-        #id_break_periods { display: none !important; }
-        .break-row { 
-            display: flex; 
-            align-items: center; 
-            gap: .5rem; 
-            margin-bottom: .5rem; }
-        .break-label { 
-            font-size: .9rem; }
-        .btn-remove-break { 
-            background: none; 
-            border: none; 
-            color: #dc3545; 
-            font-size: 1.2rem; 
-            line-height:1; 
-        }
-        .no-row-gap {
-            margin-top: 0 !important;
-        }
+    <!-- Стили -->
+    <link rel="stylesheet" href="{% static 'css/request_form.css' %}"/>
 
-        #liftingFields {
-            display: none; /* Это нормально, JS будет менять на 'block' */
-        }
-        @media (max-width: 700px) {
-            .responsive-cancel-btn .btn-text {
-                display: none;
-            }
-
-            .responsive-cancel-btn i {
-                margin: 0;
-                width: 48px;
-                height: 48px;
-                font-size: 24px; 
-                display: flex;
-                align-items: center;
-                justify-content: center;
-            }
-            .form-title 
-            {
-                padding-bottom: 3px !important;
-                margin-bottom: 10px !important;
-            }
-        }
-
-        @media (max-width: 418px) {
-            input#id_work_object,
-            input#id_work_type,
-            input.form-control,
-            input#id_date_start,
-            input#id_date_end,
-            input#id_time_start,
-            input#id_time_end,
-            input#id_transport_type,
-            input#id_break_time,
-            input#id_equipment_category,
-            select,
-            textarea {
-                padding: 2px 5px !important;
-                height: 30px;
-                font-size: calc(0.6rem + .4vw) !important;
-            }
-            .select2-container {
-                height: 50px !important;
-                font-size: calc(0.6rem + .4vw) !important;
-            }
-            .content-data{
-                display: block;
-            }
-            .content-time{
-                display: block;
-            }
-            .col-6{
-                width: 100%;
-            }
-            .form-section{
-                padding: .5rem;
-                margin-bottom: .8rem;
-            }
-            .row>*{
-                margin-top: .5rem;
-            }
-            .form-container{
-                padding: .6rem .8rem;
-            }
-        }
-    </style>
 </head>
-
 <body>
+    {% load widget_tweaks %}
     <div class="form-container">
         <h2 class="form-title">
             {% if form.instance.pk %} Редактировать заявку {% else %} Создать заявку
@@ -365,27 +33,34 @@
         </h2>
         <span class="title-line"></span>
         <form method="post" novalidate>
-            <!-- Все ошибки формы -->
             {% csrf_token %} 
             <!-- {{ form.non_field_errors }} {{ form.errors }} -->
-            
-
             <div class="row card-row">
+                
                 <!-- Основная информация -->
                 <div class="col-md-6 form-section">
                     <h6>Основная информация</h6>
                     <div class="row g-3" style="min-width: 300px">
                         <!-- Локация -->
+                        {% if form.location %}
                         <div class="col-md-6">
-                            <label for="{{ form.location.id_for_label }}" class="form-label">Локация<span
-                                    class="star">*</span></label>
-                            {{ form.location }} 
+                            <label for="id_location" class="form-label">Локация<span class="star">*</span></label>
+                            <select name="location" id="id_location" class="form-select" 
+                            {% if form.location.field.disabled %}disabled{% endif %}>
+                                {% for location in locations %}
+                                    <option value="{{ location.id }}"
+                                            {% if form.location.value|stringformat:"s" == location.id|stringformat:"s" %}selected{% endif %}>
+                                        {{ location.name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
                             {% if form.location.errors %}
                             <div class="invalid-feedback d-block">
-                                {{ form.location.errors.as_text }}
+                                {{ form.location.errors.0 }}
                             </div>
                             {% endif %}
                         </div>
+                        {% endif %}
 
                         <!-- Объект работ -->
                         <div class="col-md-6">
@@ -423,21 +98,23 @@
                             {% endif %}
                         </div>
 
-
                         <!-- Категория техники -->
                         {% if form.equipment_category %}
                         <div class="col-md-6">
-                            <label for="{{ form.equipment_category.id_for_label }}" class="form-label">
+                            <label for="id_equipment_category" class="form-label">
                                 Категория техники<span class="star">*</span>
                             </label>
                             <select name="equipment_category" id="id_equipment_category" class="form-select">
-                                {% for category in form.fields.equipment_category.queryset %}
-                                    <option value="{{ category.id }}"
-                                            data-code="{{ category.code }}"
-                                            {% if form.equipment_category.value == category.id|stringformat:"s" or category.id == form.initial.equipment_category %}selected{% endif %}>
-                                        {{ category.name }}
-                                    </option>
-                                {% endfor %}
+                                <option value="">---------</option>
+                                {% for category in categories %}
+                                <option value="{{ category.id }}"
+                                        data-code="{{ category.code }}"
+                                        {% if form.equipment_category.value|stringformat:"s" == category.id|stringformat:"s" or category.id|stringformat:"s" == current_category_id|stringformat:"s" %}
+                                        selected
+                                        {% endif %}>
+                                    {{ category.name }}
+                                </option>
+                            {% endfor %}
                             </select>
 
                             {% if form.equipment_category.errors %}
@@ -448,13 +125,19 @@
                         </div>
                         {% endif %}
 
-                        <!-- Статус заявки (только если поле есть в форме) -->
+                        <!-- Статус заявки -->
                         {% if form.status %}
                         <div class="col-md-6">
-                            <label for="{{ form.status.id_for_label }}" class="form-label">Статус заявки:<span
-                                    class="star">*</span></label>
-                            <!-- {{ form.status.label_tag }} -->
-                            {{ form.status }}
+                            <label for="id_status" class="form-label">Статус заявки:<span class="star">*</span></label>
+                            <select name="status" id="id_status" class="form-select" 
+                            {% if form.status.field.disabled %}disabled{% endif %}>
+                                {% for id, name in form.fields.status.choices %}
+                                    <option value="{{ id }}"
+                                            {% if form.status.value|stringformat:"s" == id|stringformat:"s" %}selected{% endif %}>
+                                        {{ name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
                             {% if form.status.errors %}
                             <div class="invalid-feedback d-block">
                                 {{ form.status.errors.as_text }}
@@ -462,7 +145,6 @@
                             {% endif %}
                         </div>
                         {% endif %}
-
                     </div>
                 </div>
 
@@ -651,7 +333,7 @@
                 </div>
 
                 <!-- Подъемные сооружения -->
-                <div class="col-md-6 form-section lifting-fields" id="liftingFields">
+                <div id="liftingFields" class="col-md-6 form-section lifting-fields" style="display: none;">
                     <h6>Дополнительная информация для подъемных сооружений</h6>
                     <div class="row g-3">
                         <!-- Номер удостоверения ответственного -->
@@ -718,226 +400,9 @@
     <!-- Flatpickr JS -->
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ru.js"></script>
-
-    <script>
-        // Добавляет на страницу новую строку перерыва с заданным временем начала и конца.
-        
-        function addBreakPeriod(start = "", end = "") {
-            const container = document.getElementById("break-periods-container");
-
-            const row = document.createElement("div");
-            row.className = "d-flex align-items-center gap-2 mb-2 break-row";
-
-            row.innerHTML = `
-                <input type="time" class="form-control break-start" value="${start}">
-                <span>до</span>
-                <input type="time" class="form-control break-end" value="${end}">
-                <button type="button" class="btn btn-sm btn-outline-danger remove-break-btn">&times;</button>
-            `;
-
-            container.appendChild(row);
-        }
-
-        // Добавить новую строку
-        document.getElementById('add-break-btn')
-            .addEventListener('click', () => addBreakPeriod());
-
-        // Удаление строки
-        document.getElementById('break-periods-container').addEventListener('click', function (e) {
-            if (e.target.classList.contains('remove-break-btn')) {
-                e.target.closest('.break-row').remove();
-            }
-        });
-
-        // При сабмите сериализуем
-        document.querySelector('form').addEventListener('submit', function () {
-            const out = [];
-            document.querySelectorAll('#break-periods-container .break-row').forEach(row => {
-                const s = row.querySelector('.break-start').value;
-                const e = row.querySelector('.break-end').value;
-                if (s && e) out.push(`${s}-${e}`);
-            });
-            document.getElementById('id_break_periods').value = JSON.stringify(out);
-        });
-
-        // Считывает из скрытого <input id="id_break_periods"> JSON-массив перерывов и инициализирует их на форме.
-        function initDatepickers() {
-            // flatpickr для дат
-            const datePickerConfig = {
-                locale: "ru",
-                dateFormat: "Y-m-d",
-                altInput: true,
-                altFormat: "d.m.Y",
-                allowInput: true,
-                onChange: function (selectedDates, dateStr, instance) {
-                    instance.input.classList.toggle('is-invalid', selectedDates.length === 0);
-                }
-            };
-
-            flatpickr("#id_date_start", datePickerConfig);
-            flatpickr("#id_date_end", datePickerConfig);
-
-
-            // flatpickr для времени
-            flatpickr("#{{ form.time_start.id_for_label }}", {
-                enableTime: true,
-                noCalendar: true,
-                dateFormat: "H:i",
-                time_24hr: true,
-            });
-
-            flatpickr("#{{ form.time_end.id_for_label }}", {
-                enableTime: true,
-                noCalendar: true,
-                dateFormat: "H:i",
-                time_24hr: true,
-            });
-        }
-        
-        // Настраивает отображение для поля «ответственный» с кастомным шаблоном
-        function formatPersonal(option) {
-            if (!option.id) {
-            return option.text; 
-            }
-            const fullName    = option.text;
-            const department = $(option.element).data('department') || '';
-            return $(`
-            <div>
-                <div><strong>${department}</strong></div>
-                <small class="text-muted">${fullName}</small>
-            </div>
-            `);
-        }
-
-        // 2) Инициализация Select2 на нашем селекте
-        $('.change-responsible').select2({
-            theme: 'bootstrap-5',
-            placeholder: 'Выберите ответственного',
-            allowClear: false,
-            width: 'resolve',
-            templateResult: formatPersonal,
-            templateSelection: formatPersonal,
-            escapeMarkup: m => m
-        });
-
-         // Select2 для заказчика
-        $('.change-customer').select2({
-            theme: 'bootstrap-5',
-            placeholder: 'Выберите заказчика',
-            width: 'resolve',
-            templateResult: formatPersonal,
-            templateSelection: formatPersonal,
-            escapeMarkup: m => m
-        });
-
-        // 3) AJAX‑обновление ответственного при выборе
-        $('.change-responsible').on('change', function() {
-            const $sel          = $(this),
-                requestId    = $sel.data('id'),
-                responsibleId= $sel.val();
-
-            // если создаём новую заявку (нет ID) — просто вернёмся
-            if (!requestId) return;
-
-            fetch("{% url 'update_responsible' %}", {
-            method: "POST",
-            headers: {
-                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                request_id:     requestId,
-                responsible_id: responsibleId
-            })
-            })
-            .then(r => r.json())
-            .then(js => {
-            if (!js.success) {
-                alert('Ошибка: ' + js.error);
-            }
-            });
-        });
-
-        document.addEventListener("DOMContentLoaded", function () {           
-            // Глобальные ссылки на элементы времени
-            const startInput = document.getElementById("id_time_start");
-            const endInput = document.getElementById("id_time_end");
-            const output = document.getElementById("timeDifference"); 
-            
-            // Код категории, при которой показываем блок «Подъемные сооружения»
-            const LIFTING_CODE = 'lifting';
-            const categorySelect = document.getElementById('id_equipment_category');
-            const liftingBlock = document.getElementById('liftingFields');
-
-            function toggleLiftingFields() {
-                if (!categorySelect || !liftingBlock) return;
-
-                const selectedOption = categorySelect.options[categorySelect.selectedIndex];
-                const categoryCode = selectedOption.dataset.code || '';
-
-                // Проверяем как текущий выбор, так и сохраненное значение
-                const isLifting = categoryCode === LIFTING_CODE || 
-                (selectedOption && selectedOption.selected && selectedOption.dataset.code === LIFTING_CODE);
-        
-                liftingBlock.style.display = isLifting ? 'block' : 'none';}
-
-            if (categorySelect) {
-                categorySelect.addEventListener('change', toggleLiftingFields);
-                toggleLiftingFields(); // Проверка при загрузке страницы
-            }
-
-            function calculateTimeDifference() {
-                if (!startInput || !endInput || !output) return;
-
-                const start = startInput.value;
-                const end = endInput.value;
-
-                if (!start || !end) {
-                    output.textContent = "⏱ Продолжительность времени (автоматически): —";
-                    return;
-                }
-
-                const [startH, startM] = start.split(":").map(Number);
-                const [endH, endM] = end.split(":").map(Number);
-
-                const startMinutes = startH * 60 + startM;
-                const endMinutes = endH * 60 + endM;
-
-                const diff = endMinutes - startMinutes;
-
-                if (diff <= 0) {
-                    output.textContent = "⏱ Время окончания должно быть позже начала";
-                    return;
-                }
-
-                const hours = Math.floor(diff / 60);
-                const minutes = diff % 60;
-
-                output.textContent = `⏱ Продолжительность времени (автоматически): ${hours} ч ${minutes} мин`;
-            }
-
-            // События времени
-            if (startInput && endInput) {
-                startInput.addEventListener("change", calculateTimeDifference);
-                endInput.addEventListener("change", calculateTimeDifference);
-                calculateTimeDifference();
-            }
-
-            let existing = [];
-            try {
-                const raw = document.getElementById('id_break_periods').value;
-                if (raw) existing = JSON.parse(raw); // ["03:30-03:04", "16:30-16:00"]
-            } catch (e) {}
-
-            existing.forEach(str => {
-                if (typeof str === "string" && str.includes("-")) {
-                    const [start, end] = str.split("-");
-                    addBreakPeriod(start, end);
-                }
-            });
-            initDatepickers();
-        });
-    </script>
+    
+    <!-- Скрипты кастомные -->
+    <script src="{% static 'js/request_form.js' %}"></script>
 </body>
 
 </html>
