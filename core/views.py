@@ -171,7 +171,7 @@ def request_list_view(request):
     # --- сериализацию break_periods ---
     requests_with_serialized_breaks = []
     for req in qs:
-        req.break_periods_json = mark_safe(json.dumps(req.break_periods or [])) 
+        req.break_periods_json = req.break_periods or []
         requests_with_serialized_breaks.append(req)
 
     locations = OrganizationLocation.objects.all()

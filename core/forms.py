@@ -1,7 +1,5 @@
 from django import forms
 from .models import Category, Request, Status, Profile, OrganizationLocation
-from django.forms.models import ModelChoiceIteratorValue
-from django.core.exceptions import ValidationError
 
 class RequestForm(forms.ModelForm):
     location = forms.ModelChoiceField(

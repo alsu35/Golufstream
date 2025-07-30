@@ -82,6 +82,7 @@ select {
 .back-link:hover {
   color: #4da4cb;
 }
+
 .btn-gradient {
   background: transparent;
   color: #574ca1;
@@ -94,6 +95,7 @@ select {
   color: white;
   background: linear-gradient(135deg, #574ca1, #4da4cb);
 }
+
 .form-section {
   background-color: #f8f9fa;
   border-radius: 12px;
@@ -248,15 +250,18 @@ select {
 #id_break_periods {
   display: none !important;
 }
+
 .break-row {
   display: flex;
   align-items: center;
   gap: 0.5rem;
   margin-bottom: 0.5rem;
 }
+
 .break-label {
   font-size: 0.9rem;
 }
+
 .btn-remove-break {
   background: none;
   border: none;
@@ -264,6 +269,7 @@ select {
   font-size: 1.2rem;
   line-height: 1;
 }
+
 .no-row-gap {
   margin-top: 0 !important;
 }
@@ -282,6 +288,7 @@ select {
     align-items: center;
     justify-content: center;
   }
+
   .form-title {
     padding-bottom: 3px !important;
     margin-bottom: 10px !important;
@@ -289,6 +296,7 @@ select {
 }
 
 @media (max-width: 418px) {
+
   input#id_work_object,
   input#id_work_type,
   input.form-control,
@@ -305,26 +313,33 @@ select {
     height: 30px;
     font-size: calc(0.6rem + 0.4vw) !important;
   }
+
   .select2-container {
     height: 50px !important;
     font-size: calc(0.6rem + 0.4vw) !important;
   }
+
   .content-data {
     display: block;
   }
+
   .content-time {
     display: block;
   }
+
   .col-6 {
     width: 100%;
   }
+
   .form-section {
     padding: 0.5rem;
     margin-bottom: 0.8rem;
   }
-  .row > * {
+
+  .row>* {
     margin-top: 0.5rem;
   }
+
   .form-container {
     padding: 0.6rem 0.8rem;
   }
