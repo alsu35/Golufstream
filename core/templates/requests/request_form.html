@@ -214,22 +214,26 @@
                         <!-- Перерывы -->
                         <div class="col-12 no-row-gap">
                             <div class="d-flex justify-content-between align-items-center mb-2">
-                                <label for="id_break_periods" class="form-label mb-0">{{ form.break_periods.label }}</label>
+                                <label for="id_break_periods" class="form-label mb-0">
+                                {{ form.break_periods.label }}
+                                </label>
                                 <button type="button" class="btn btn-outline-primary btn-sm" id="add-break-btn">
                                     <i class="bi bi-plus-lg"></i>
                                 </button>
                             </div>
-
                             <div id="break-periods-container">
-                            {# сюда JS подставит существующие или новые строки #}
+                                {# JS подставит строки #}
                             </div>
-
-                            {{ form.break_periods }}  {# это <textarea id="id_break_periods"> #}
+                            {{ form.break_periods }}
                             {% if form.break_periods.help_text %}
-                            <small class="form-text text-muted">{{ form.break_periods.help_text }}</small>
+                                <small class="form-text text-muted">{{ form.break_periods.help_text }}</small>
                             {% endif %}
                             {% if form.break_periods.errors %}
-                            <div class="invalid-feedback d-block">{{ form.break_periods.errors.as_text }}</div>
+                                <div class="invalid-feedback d-block">
+                                {% for error in form.break_periods.errors %}
+                                    {{ error }}<br>
+                                {% endfor %}
+                                </div>
                             {% endif %}
                         </div>
 

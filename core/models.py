@@ -348,6 +348,27 @@ class Request(models.Model):
                 if cat_id else None
             )
 
+            # проверка перерывов внутри рабочего времени
+            break_errors = []
+            for period in self.break_periods or []:
+                try:
+                    start_str, end_str = period.split('-')
+                    t_start = datetime.strptime(start_str, '%H:%M').time()
+                    t_end   = datetime.strptime(end_str,   '%H:%M').time()
+                    if t_start >= t_end:
+                        break_errors.append(f'В перерыве "{period}" начало должно быть раньше окончания')
+                    if self.time_start and t_start < self.time_start or self.time_end and t_end > self.time_end:
+                        break_errors.append(
+                            f'Перерыв "{period}" выходит за пределы времени работ '
+                            f'({self.time_start.strftime("%H:%M")}–{self.time_end.strftime("%H:%M")})'
+                        )
+                except Exception:
+                    break_errors.append(f'Неверный формат перерыва "{period}". Ожидается "HH:MM-HH:MM"')
+            
+            if break_errors:
+                # аккумулируем все ошибки под единым ключом
+                errors['break_periods'] = break_errors
+
             if code == 'lifting':
                 if not self.responsible_certificate:
                     errors['responsible_certificate'] = \
