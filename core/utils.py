@@ -1,5 +1,14 @@
 from django.core.cache import cache
-from .models import OrganizationLocation, Category, Status, Profile
+from core.views import get_cached_categories, get_cached_locations, get_cached_statuses
+from users.models import Profile
+from core.models import OrganizationLocation, Category, Status
+
+def _has_role(user, role_code):
+    """
+    Проверить наличие конкретной роли у пользователя через профиль.
+    """
+    profile = getattr(user, 'profile', None)
+    return profile and profile.role.code == role_code
 
 def get_reference_data():
     """

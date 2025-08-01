@@ -1,0 +1,467 @@
+body {
+    background-color: #f8f9fa;
+}
+
+.container {
+    max-width: 100%;
+    margin-right: 20px;
+}
+
+.sortable {
+    cursor: pointer;
+    position: relative;
+}
+
+.sortable::after {
+    content: "▼";
+    position: absolute;
+    right: 5px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.8em;
+    color: white;
+    opacity: 0.5;
+}
+
+.sortable.asc::after {
+    content: "▲";
+    opacity: 1;
+}
+
+.sortable.desc::after {
+    content: "▼";
+    opacity: 1;
+}
+
+table thead th {
+    font-size: clamp(0.8rem, 0.4rem + 0.7vw, 1.2rem);
+}
+
+td {
+    font-size: clamp(0.6rem, 0.4rem + 0.9vw, 0.95rem)
+}
+
+.search-filter-container {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.search-filter-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    justify-content: center;
+    align-items: center;
+    overflow-x: visible;
+}
+
+.search-filter-row>* {
+    flex: 1 1 180px;
+    max-width: 350px;
+    min-width: 150px;
+    box-sizing: border-box;
+}
+
+
+.search-filter-container .form-select {
+    max-width: 200px;
+    width: 100%;
+    box-sizing: border-box;
+    margin: 0;
+    font-size: calc(0.5rem + 0.4vw);
+    height: 38px;
+}
+
+.search-filter-container .form-control {
+    margin: auto 0;
+    font-size: calc(0.5rem + 0.4vw);
+    height: 38px;
+}
+
+.search-filter-dates {
+    margin-top: 1rem;
+    flex-wrap: wrap;
+    justify-content: center;
+    display: flex;
+    gap: 0.75rem;
+}
+
+.search-filter-dates .form-control {
+    min-height: 38px;
+    min-width: 100px;
+}
+
+.table-container {
+    overflow-x: auto;
+    position: relative;
+}
+
+h5 {
+    font-size: calc(0.8rem + 0.4vw);
+}
+
+h6 {
+    font-size: calc(0.7rem + 0.4vw);
+}
+
+/*
+* Стили для "закреплённой" колонки действий (кнопки: Подробнее, Редактировать и т.д.)
+* Используется position: sticky, центрирование кнопок внутри ячейки
+*/
+.table thead th.actions,
+.table tbody td.actions {
+    position: sticky;
+    left: 0;
+    background-color: #fff;
+    z-index: 1;
+    box-shadow: 1px 0 0 rgba(0, 0, 0, 0.1);
+}
+
+/* Центрирование кнопок внутри .actions */
+.actions {
+    align-items: center;
+    /* небольшой отступ между кнопками */
+    text-align: center;
+    /* уменьшенный внутренний отступ */
+    white-space: nowrap;
+    /* запрет переноса кнопок на новую строку (опционально) */
+}
+
+.table thead th.actions {
+    background-color: #343a40;
+}
+
+.status-badge {
+    font-weight: bold;
+    padding: 0.4em 0.8em;
+    border-radius: 5px;
+    color: #333;
+    font-size: 0.9rem;
+}
+
+.change-status {
+    /* можно задать отступы и min-width */
+    display: inline-block;
+    text-align: center;
+}
+
+/* Цветовые варианты */
+.change-status.status-new {
+    background-color: #f4d867;
+}
+
+.change-status.status-assigned {
+    background-color: #d1b3ff;
+}
+
+.change-status.status-work {
+    background-color: #b2eac3;
+}
+
+.change-status.status-done {
+    background-color: #88c9ed;
+}
+
+.change-status.status-cancel {
+    background-color: #ff9696;
+}
+
+/* Адаптивный размер текста кнопок */
+.btn-responsive span.text {
+    font-size: calc(0.5rem + 0.4vw);
+    white-space: nowrap;
+}
+
+/* Иконки по умолчанию скрыты */
+.btn-responsive i {
+    display: none;
+}
+
+/* Если это селект — уберём стандартный белый фон и применим перекраску */
+.change-status.form-select {
+    color: #333;
+    border: none;
+}
+
+.btn-double {
+    background: transparent;
+    color: #4ca15e;
+    border: 1px solid #4ca15e;
+    margin-top: 2px;
+}
+
+.btn-double:hover {
+    opacity: 0.9;
+    color: white;
+    background: #4ca15e;
+    ;
+}
+
+.btn-edit {
+    background: transparent;
+    color: #574ca1;
+    border: 1px solid #574ca1;
+    margin-top: 2px;
+}
+
+.btn-edit:hover {
+    opacity: 0.9;
+    color: white;
+    background: linear-gradient(135deg, #574ca1, #4da4cb);
+}
+
+.btn-logout {
+    background: #e9ecef;
+    color: #333;
+    border: none;
+    margin-right: 1rem;
+    border: 1px solid #198754;
+}
+
+.btn-logout:hover {
+    background: #198754;
+    color: white;
+}
+
+.date-range {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.date-range input {
+    flex: 1;
+}
+
+.fio-header {
+    font-size: calc(0.5rem + .7vw);
+    margin: 0;
+    padding: 0;
+    margin-top: -6px;
+}
+
+.role-header {
+    font-size: calc(0.4rem + .5vw);
+    margin-top: -6px;
+    padding: 0;
+    color: #6c757d;
+}
+
+.select2-results__option {
+    white-space: normal !important;
+    padding: 0.5rem 1rem !important;
+}
+
+.select2-selection__rendered {
+    white-space: normal !important;
+}
+
+/* Перенос длинных названий в Select2 */
+.select2-container--bootstrap-5 .select2-selection__rendered {
+    white-space: normal;
+    /* переход на новую строку */
+    line-height: 1.2;
+    /* чуть компактнее */
+}
+
+/* Скрываем крестик очистки */
+.select2-container--bootstrap-5 .select2-selection__clear {
+    display: none !important;
+}
+
+/* Стили для каждой опции: ФИО + должность */
+.select2-container--bootstrap-5 .select2-results__option .option-title {
+    display: block;
+    font-weight: 600;
+}
+
+.select2-container--bootstrap-5 .select2-results__option .option-sub {
+    display: block;
+    font-size: 0.85em;
+    color: #6c757d;
+}
+
+.date-filter-container .text-nowrap {
+    display: none;
+}
+
+
+.date-filter-container .form-control {
+    max-width: 90px;
+    font-size: 0.7rem;
+    height: calc(1.8rem + 0.2vh);
+}
+
+/* Адаптивный размер текста */
+.date-filter-container .text-nowrap,
+label {
+    font-size: calc(0.7rem + 0.3vw);
+}
+
+/* Высота полей ввода */
+.date-filter-container .form-control {
+    height: calc(2rem + 0.2vh);
+    /* адаптивная высота */
+    font-size: calc(0.65rem + 0.2vw);
+    padding: 0 0.5rem;
+}
+
+/* Убираем внутренние отступы у td или делаем их минимальными */
+.table td.status,
+.table td.responsible {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+    white-space: nowrap;
+}
+
+/* Минимальная ширина для ячеек */
+.table td.status {
+    min-width: 100px;
+}
+
+.table td.responsible {
+    min-width: 120px;
+}
+
+/* Для селекта — убираем стандартный padding у form-select */
+.table td.responsible .form-select {
+    padding-left: 0.35rem;
+    padding-right: 0.35rem;
+    font-size: 0.8rem;
+}
+
+/* Если используется status-badge — тоже делаем компактным */
+.table td.status .status-badge {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+}
+
+.select2-container--bootstrap-5 .select2-selection--single .select2-selection__rendered {
+    margin-top: -30px;
+    /* Поднимаем текст немного вверх */
+}
+
+.select2-container .select2-selection--single .select2-selection__rendered {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    overflow: visible !important;
+}
+
+@media (max-width: 1570px) {
+
+    #requestsTable th:nth-child(13),
+    #requestsTable td:nth-child(13) {
+        display: none;
+    }
+}
+
+@media (max-width: 932px) {
+    .search-filter-dates {
+        justify-content: flex-start;
+        gap: 0.5rem;
+    }
+
+
+    .search-filter-container .form-select {
+        min-width: auto;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+
+}
+
+@media (max-width: 765px) {
+    .btn span.d-none.d-sm-inline {
+        display: none !important;
+    }
+
+    .btn i.d-sm-none {
+        display: inline-block !important;
+        margin-left: 0;
+        font-size: 1.3rem;
+        vertical-align: middle;
+    }
+
+    .btn i.me-1 {
+        display: none !important;
+    }
+
+    .btn.d-inline-flex {
+        align-items: center;
+        justify-content: center;
+    }
+
+    .btn-responsive {
+        margin-right: 0 !important;
+        gap: 0 !important;
+        display: inline-block !important;
+    }
+
+    .btn-responsive span.text {
+        display: none;
+
+    }
+
+    .btn-responsive i {
+        display: inline-block;
+        margin-right: 0;
+        display: block;
+    }
+
+    .table>:not(caption)>*>* {
+        padding: .2rem .3rem !important;
+    }
+
+    .search-filter-container {
+        margin-bottom: .7rem !important;
+        padding: .5rem !important;
+    }
+
+    .text-nowrap {
+        display: none;
+    }
+
+    .btn-work-data .text {
+        display: none;
+    }
+
+    .search-filter-container .form-select,
+    .search-filter-container .form-control {
+        height: 30px !important;
+    }
+
+    .gap-3 {
+        gap: .4rem !important;
+    }
+
+    .mb-3 {
+        margin-bottom: .4rem !important;
+    }
+
+    .mt-3 {
+        margin-top: .4rem !important;
+    }
+
+    .search-container {
+        margin-top: .5rem !important;
+    }
+}
+
+@media (max-width: 350px) {
+
+    .btn.btn-success.btn-sm,
+    .btn.btn-outline-secondary.btn-sm {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
+        height: 30px;
+    }
+
+    .d-flex.flex-column.align-items-center.gap-1 {
+        display: none !important;
+    }
+}
