@@ -34,7 +34,8 @@ class Department(models.Model):
         Organization,
         verbose_name=_('Организация'),
         on_delete=models.CASCADE,
-        related_name='departments'
+        related_name='departments',
+        db_index=True
     )
     name = models.CharField(
         _('Наименование'),
@@ -73,17 +74,12 @@ class CustomUserManager(BaseUserManager):
 
 # --- Пользователь ---
 class User(AbstractUser):
-    username = models.CharField(
-        _('username'),
-        max_length=150,
-        unique=True,
-        blank=True,
-        null=True,
-    )
+    username = None
     email = models.EmailField(
         _('Почта'),
         unique=True,
-        help_text=_('Обязательное поле')
+        help_text=_('Обязательное поле'),
+        db_index=True
     )
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []
@@ -118,7 +114,7 @@ class Profile(models.Model):
         _('Отчество'),
         max_length=100,
         blank=True,
-        null=True
+        default=''
     )
     position = models.CharField(
         _('Должность'),
@@ -137,7 +133,9 @@ class Profile(models.Model):
     )
     phone = models.CharField(
         _('Телефон'),
-        max_length=20
+        max_length=20,
+        unique=True,
+        help_text=_('Номер телефона должен быть уникальным')
     )
     location = models.ForeignKey(
         'core.OrganizationLocation',
@@ -146,12 +144,6 @@ class Profile(models.Model):
         related_name='profiles',
         db_index=True
     )
-    is_active = models.BooleanField(
-        _('Активен'),
-        default=True,
-        help_text=_('Статус активности профиля')
-    )
-
     class Meta:
         verbose_name = _('Профиль')
         verbose_name_plural = _('Профили')
@@ -162,3 +154,4 @@ class Profile(models.Model):
     @property
     def full_name(self):
         return f"{self.last_name} {self.first_name} {self.middle_name or ''}".strip()
+    

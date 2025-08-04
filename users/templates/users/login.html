@@ -5,12 +5,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Вход в систему</title>
-    <link rel="stylesheet" href="{% static 'css/login.css' %}">
-    {% load static %}
+    <!-- Иконки -->
     <link rel="icon" href="{% static 'img/favicon.png' %}" type="image/png">
     <link rel="shortcut icon" href="{% static 'img/favicon.ico' %}" type="image/x-icon">
-
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- Стили -->
+    <link rel="stylesheet" href="{% static 'users/css/login.css' %}">
 </head>
 <body>
     <div class="login-container">
@@ -20,7 +20,7 @@
             </div>
             <div class="login-content">
                 <h2>Вход в систему</h2>
-                <form method="post" novalidate>
+                <form method="post">
                     {% csrf_token %}
                     
                     <!-- Логин -->
@@ -46,6 +46,14 @@
                     <div class="form-check mb-3">
                         <input type="checkbox" class="form-check-input" id="rememberMe" name="remember">
                         <label class="form-check-label" for="rememberMe">Запомнить меня</label>
+                    </div>
+
+                    <!-- Переход на регистрацию-->
+                    <div class="form-check mb-3 text-center">
+                        <span>Нет аккаунта?</span>
+                        <a href="{% url 'register' %}" class="link-light fw-medium">
+                            Зарегистрироваться
+                        </a>
                     </div>
 
                     <!-- Кнопка -->

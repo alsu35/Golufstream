@@ -5,6 +5,9 @@ from django.utils import timezone
 from datetime import datetime
 from users.models import Profile
 from core.models import Status, Category, OrganizationLocation
+# -------индексация--------
+from django.contrib.postgres.indexes import GinIndex
+from django.contrib.postgres.search import SearchVectorField
 
 class Request(models.Model):
     customer = models.ForeignKey(
@@ -146,7 +149,7 @@ class Request(models.Model):
             errors['break_periods'] = break_errors
 
         # Проверка полей для "Подъемные сооружения"
-        if self.equipment_category.code == 'lifting':
+        if self.equipment_category and self.equipment_category.code == 'lifting':
             if not self.responsible_certificate:
                 errors['responsible_certificate'] = 'Обязательно укажите номер удостоверения ответственного'
             if not self.rigger_name:
@@ -163,5 +166,6 @@ class Request(models.Model):
             raise ValidationError(errors)
 
     def save(self, *args, **kwargs):
-        self.full_clean()
+        if not kwargs.get('update_fields'):
+            self.full_clean()
         super().save(*args, **kwargs)

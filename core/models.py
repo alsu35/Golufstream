@@ -13,16 +13,19 @@ class NamedModel(models.Model):
         return self.name
 
 class Status(NamedModel):
+    """ Статусы заявок"""
     class Meta(NamedModel.Meta):
         verbose_name = _('Статус')
         verbose_name_plural = _('Статусы')
 
 class Category(NamedModel):
+    """ Категория транспорта при подаче заявки"""
     class Meta(NamedModel.Meta):
         verbose_name = _('Категория')
         verbose_name_plural = _('Категории')
 
 class Role(NamedModel):
+    """ Роль  заявки"""
     class Meta(NamedModel.Meta):
         verbose_name = _('Роль')
         verbose_name_plural = _('Роли')

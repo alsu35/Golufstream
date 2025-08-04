@@ -16,7 +16,8 @@
     <link href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" rel="stylesheet" />
 
     <!-- Иконки -->
-    <link rel="icon" href="{% static 'core/img/favicon.png' %}" type="image/png" />
+    <link rel="icon" href="{% static 'img/favicon.png' %}" type="image/png">
+    <link rel="shortcut icon" href="{% static 'img/favicon.ico' %}" type="image/x-icon">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
     
     <!-- Стили -->
@@ -75,8 +76,8 @@
 
                         <!-- Вид работ -->
                         <div class="col-md-6">
-                            <label for="{{ form.work_type.id_for_label }}" class="form-label">Вид работ<span
-                                    class="star">*</span></label>
+                            <label for="{{ form.work_type.id_for_label }}" class="form-label">Вид работ
+                                <span class="star">*</span></label>
                             {{ form.work_type }} 
                             {% if form.work_type.errors %}
                             <div class="invalid-feedback d-block">
@@ -407,5 +408,4 @@
     <!-- Скрипты кастомные -->
     <script src="{% static 'myrequests/js/request_form.js' %}"></script>
 </body>
-
 </html>

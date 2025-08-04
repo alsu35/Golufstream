@@ -26,7 +26,6 @@ def request_list_view(request):
     """
     user = request.user
     profile = getattr(user, 'profile', None)
-    
 
     # Базовый queryset
     qs = Request.objects.select_related(

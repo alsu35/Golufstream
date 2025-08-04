@@ -23,7 +23,7 @@ class RequestForm(forms.ModelForm):
             'location', 'date_start', 'date_end', 'time_start', 'time_end',
             'work_object', 'work_type', 'transport_type', 'equipment_category',
             'break_periods', 'status', 'is_completed_fact', 'comment',
-            'responsible',
+            'responsible', 'customer',
             'responsible_certificate', 'rigger_name', 'rigger_certificates',
         ]
         widgets = {

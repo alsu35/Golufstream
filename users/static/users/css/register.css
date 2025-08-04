@@ -1,0 +1,239 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body,
+html {
+    height: 100%;
+    background-color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+}
+
+.login-container {
+    position: relative;
+    width: 100%;
+    max-width: 600px;
+    padding: 0 20px;
+    max-height: 100vh;
+    overflow-y: auto;
+    scroll-behavior: smooth;
+}
+
+.login-box {
+    position: relative;
+    background: linear-gradient(135deg, #8e3798, #574ca1, #4da4cb);
+    padding: 50px 40px 40px;
+    border-radius: 20px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+    width: 100%;
+    color: white;
+    text-align: center;
+}
+
+.logo {
+    width: 80px;
+    height: 70px;
+    margin: -20px auto 10px;
+    background-color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.logo img {
+    width: 60px;
+    height: 35px;
+}
+
+.login-box h2 {
+    margin-bottom: 30px;
+    font-weight: 700;
+    font-size: calc(.8rem + .9vw);
+    letter-spacing: 0.05em;
+}
+
+.input-group {
+    position: relative;
+    margin-bottom: 22px;
+    text-align: left;
+}
+
+.input-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: calc(.5rem + .5vw);
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.input-group input,
+.input-group select {
+    width: 100%;
+    padding: 12px 14px 12px 40px;
+    border-radius: 10px;
+    border: none;
+    outline: none;
+    font-size: calc(.5rem + .5vw);
+    font-weight: 500;
+    background-color: rgba(255, 255, 255, 0.25);
+    color: white;
+    transition: all 0.3s ease;
+}
+
+.input-group input::placeholder,
+.input-group select {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.input-group select {
+    /* Убираем стандартную стрелку браузера */
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,0.7)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 16px;
+    padding-right: 36px;
+}
+
+/* Цвет текста ВНУТРИ выпадающего списка */
+.input-group select option {
+    color: black;
+    /* Ключевое свойство! */
+    background-color: white;
+}
+
+.input-group input:focus,
+.input-group select:focus {
+    background-color: rgba(255, 255, 255, 0.4);
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.3);
+}
+
+.input-icon {
+    position: absolute;
+    left: 15px;
+    bottom: 12px;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.btn-container {
+    margin-top: 30px;
+}
+
+.btn-login {
+    width: 100%;
+    padding: 14px 0;
+    font-weight: 700;
+    font-size: calc(.3rem + .5vw);
+    border-radius: 12px;
+    border: none;
+    cursor: pointer;
+    background-color: white;
+    color: #4da4cb;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.btn-login:hover {
+    background-color: #f0f0f0;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+.form-check {
+    font-size: calc(.4rem + .6vw);
+}
+
+.error-message {
+    margin-top: 15px;
+    color: #ffdddd;
+    font-size: 14px;
+    font-weight: 600;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+a {
+    text-decoration: none;
+    color: #ffffff;
+    font-weight: bold;
+    font-style: italic;
+}
+
+/* --- ДВЕ КОЛОНКИ ДЛЯ ФОРМЫ --- */
+.form-columns {
+    display: flex;
+    gap: 25px;
+    margin-bottom: 20px;
+}
+
+.column-left,
+.column-right {
+    flex: 1;
+    min-width: 0;
+    /* Для корректного переноса длинных слов */
+}
+
+
+/* Адаптивность: на мобильных устройствах колонки становятся вертикальными */
+@media (max-width: 768px) {
+    .form-columns {
+        flex-direction: column;
+        gap: 0 !important;
+    }
+
+    .column-left,
+    .column-right {
+        width: 100% !important;
+    }
+
+    .login-box {
+        padding: 30px 20px 20px;
+    }
+
+    .login-box h2 {
+        margin-bottom: 10px;
+    }
+
+    .column-left .input-group,
+    .column-right .input-group {
+        margin-bottom: 6px !important;
+    }
+
+    .btn-login {
+        padding: 10px 0;
+    }
+
+    .form-columns {
+        margin-bottom: 0 !important;
+    }
+
+    .btn-container {
+        margin-top: 10px;
+    }
+}
+
+/* Уменьшаем отступы для полей в колонках */
+.column-left .input-group,
+.column-right .input-group {
+    margin-bottom: 18px;
+}
+
+/* Для select-полей (подразделение, роль и т.д.) */
+.column-left select,
+.column-right select {
+    background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,0.7)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 16px;
+    padding-right: 36px;
+}

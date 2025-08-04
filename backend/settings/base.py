@@ -4,12 +4,12 @@ from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
-load_dotenv(BASE_DIR / '.env')
+load_dotenv(BASE_DIR / '.env', encoding='utf-8-sig')
 
 SECRET_KEY =  os.getenv('SECRET_KEY')
 DEBUG = False
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['10.223.2.56']
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -21,8 +21,8 @@ INSTALLED_APPS = [
     'mptt',
     'widget_tweaks',
     'core',
-    'myrequests',
     'users',
+    'myrequests',
 ]
 
 MIDDLEWARE = [

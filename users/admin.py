@@ -27,21 +27,50 @@ class UserAdmin(BaseUserAdmin):
     list_display = ('email', 'get_role', 'get_organization', 'is_staff', 'is_superuser')
     search_fields = ('email',)
     ordering = ('email',)
+    list_filter = ('is_staff', 'is_superuser', 'profile__role', 'profile__department__organization')
+
+    # === удаляем username из fieldsets ===
+    fieldsets = (
+        (None, {'fields': ('email', 'password')}),
+        ('Разрешения', {
+            'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions'),
+        }),
+        ('Даты', {'fields': ('last_login', 'date_joined')}),
+    )
+
+    # Поля для формы создания нового пользователя
+    add_fieldsets = (
+        (None, {
+            'classes': ('wide',),
+            'fields': ('email', 'password1', 'password2'),
+        }),
+    )
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        return qs.select_related('profile__role', 'profile__department__organization')
 
     def get_role(self, obj):
-        return obj.profile.role.name if hasattr(obj, 'profile') and obj.profile.role else '-'
+        try:
+            return obj.profile.role.name
+        except (AttributeError, Profile.DoesNotExist):
+            return '-'
     get_role.short_description = 'Роль'
 
     def get_organization(self, obj):
-        dept = getattr(obj.profile, 'department', None)
-        return dept.organization.name if dept and dept.organization else '-'
+        try:
+            return obj.profile.department.organization.name
+        except (AttributeError, Profile.DoesNotExist):
+            return '-'
     get_organization.short_description = 'Организация'
+
 
 @admin.register(Profile)
 class ProfileAdmin(admin.ModelAdmin):
-    list_display = ('user', 'full_name', 'is_active')
-    list_filter = ('is_active', 'role', 'location')
+    list_display = ('user', 'full_name')
+    list_filter = ('role', 'location')
     search_fields = ('last_name', 'first_name', 'middle_name', 'user__email')
+    autocomplete_fields = ('user',)
     raw_id_fields = ('user',)
     list_select_related = ('department', 'department__organization', 'role', 'location')
 
