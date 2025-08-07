@@ -1,7 +1,7 @@
 from .base import *
 
 DEBUG = False
-ALLOWED_HOSTS = ['10.223.2.56']
+ALLOWED_HOSTS = ['10.166.11.175']
 
 CSRF_COOKIE_SECURE = True
 CSRF_COOKIE_HTTPONLY = True

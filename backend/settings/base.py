@@ -9,7 +9,7 @@ load_dotenv(BASE_DIR / '.env', encoding='utf-8-sig')
 SECRET_KEY =  os.getenv('SECRET_KEY')
 DEBUG = False
 
-ALLOWED_HOSTS = ['10.223.2.56']
+ALLOWED_HOSTS = ['10.166.11.175']
 
 INSTALLED_APPS = [
     'django.contrib.admin',
