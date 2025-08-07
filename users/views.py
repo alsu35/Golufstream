@@ -56,35 +56,28 @@ def redirect_after_login_view(request):
 
 def register_view(request: HttpRequest) -> HttpResponse:
     """
-    Представление для регистрации нового пользователя.
-    Создаёт пользователя и профиль, затем автоматически авторизует.
+    Оптимизированная регистрация: транзакция + логин без повторного authenticate().
     """
     if request.method == 'POST':
         form = RegisterForm(request.POST)
         if form.is_valid():
             try:
                 user = form.save(commit=True)
-                logger.info(f"Новый пользователь зарегистрирован: {user.email}")
+                logger.info(f"Новый пользователь: {user.email}")
 
-                # Автоматический вход после регистрации
-                username = user.get_username()
-                auth_user = authenticate(
-                    request,
-                    username=username,
-                    password=form.cleaned_data['password1']
-                )
-                if auth_user is not None:
-                    login(request, auth_user)
-                    logger.info(f"Автоматический вход после регистрации: {username}")
-                    return redirect_after_login_view(request)
-                else:
-                    return redirect('login')
+                # Логиним сразу
+                user.backend = 'django.contrib.auth.backends.ModelBackend'
+                login(request, user)
+                logger.info(f"Автовход для {user.email}")
+
+                # Редирект по ролям
+                if user.is_superuser or _has_role(user, 'admin'):
+                    return redirect('/admin/')
+                return redirect('request_list')
 
             except Exception as e:
-                logger.error(f"Ошибка при сохранении пользователя: {e}")
-                form.add_error(None, "Произошла ошибка при регистрации. Попробуйте позже.")
-        else:
-            logger.warning("Форма регистрации заполнена некорректно.")
+                logger.error(f"Регистрация упала: {e}")
+                form.add_error(None, "Ошибка регистрации, попробуйте позже.")
     else:
         form = RegisterForm()
 

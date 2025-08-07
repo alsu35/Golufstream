@@ -11,6 +11,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <!-- Стили -->
     <link rel="stylesheet" href="{% static 'users/css/register.css' %}">
+    <!-- Select2 CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0-rc.0/css/select2.min.css" rel="stylesheet" />
 </head>
 <body>
     <div class="login-container">
@@ -20,108 +22,116 @@
             </div>
             <div class="login-content">
                 <h2>Создать аккаунт</h2>
-                <form method="post">
+                <form method="post" novalidate>
+                    {% load widget_tweaks %}
                     {% csrf_token %}
-
-                    <!-- Ошибки формы -->
-                    {% if form.non_field_errors %}
-                        <p class="error-message">{{ form.non_field_errors }}</p>
-                    {% endif %}
-
-                    <!-- Две колонки -->
-                    <div class="form-columns">
-                        <!-- Левая колонка -->
-                        <div class="column-left">
-                            <!-- ФИО -->
-                            <div class="input-group">
-                                <label for="{{ form.last_name.id_for_label }}">Фамилия</label>
-                                {{ form.last_name }}
-                                <span class="input-icon"><i class="fas fa-user"></i></span>
-                            </div>
-                            <div class="input-group">
-                                <label for="{{ form.first_name.id_for_label }}">Имя</label>
-                                {{ form.first_name }}
-                                <span class="input-icon"><i class="fas fa-user"></i></span>
-                            </div>
-                            <div class="input-group">
-                                <label for="{{ form.middle_name.id_for_label }}">Отчество</label>
-                                {{ form.middle_name }}
-                                <span class="input-icon"><i class="fas fa-user"></i></span>
-                            </div>
-
-                            <!-- Email -->
-                            <div class="input-group">
-                                <label for="{{ form.email.id_for_label }}">Email</label>
-                                {{ form.email }}
-                                <span class="input-icon"><i class="fas fa-envelope"></i></span>
-                            </div>
-
-                            <!-- Пароли -->
-                            <div class="input-group">
-                                <label for="{{ form.password1.id_for_label }}">Пароль</label>
-                                {{ form.password1 }}
-                                <span class="input-icon"><i class="fas fa-lock"></i></span>
-                            </div>
-                            <div class="input-group">
-                                <label for="{{ form.password2.id_for_label }}">Подтвердите пароль</label>
-                                {{ form.password2 }}
-                                <span class="input-icon"><i class="fas fa-lock"></i></span>
-                            </div>
+                    <!-- Автоматическая сетка без ручного разделения -->
+                    <div class="form-grid">
+                        <!-- Все поля идут последовательно -->
+                        <div class="input-group">
+                            <label for="{{ form.last_name.id_for_label }}">Фамилия<span class="star">*</span></label>
+                            {{ form.last_name }}
+                            <span class="input-icon"><i class="fas fa-user"></i></span>
                         </div>
-
-                        <!-- Правая колонка -->
-                        <div class="column-right">
-                            {% load widget_tweaks %}
-                            <div class="input-group">
-                                <label for="id_phone">Телефон</label>
-                                <input 
-                                    type="text" 
-                                    name="{{ form.phone.html_name }}" 
-                                    id="id_phone" 
-                                    class="phone-input" 
-                                    placeholder="8-999-902-81-58"
-                                    value="{{ form.phone.value|default_if_none:'' }}"
-                                >
-                                <span class="input-icon"><i class="fas fa-phone"></i></span>
-                            </div>
-                            <div class="input-group">
-                                <label for="{{ form.position.id_for_label }}">Должность</label>
-                                {{ form.position }}
-                                <span class="input-icon"><i class="fas fa-briefcase"></i></span>
-                            </div>
-                            <div class="input-group">
-                                <label for="{{ form.birth_date.id_for_label }}">Дата рождения</label>
-                                {{ form.birth_date }}
-                                <span class="input-icon"><i class="fas fa-calendar"></i></span>
-                            </div>
-
-                            <!-- Организация -->
-                            <div class="input-group">
-                                <label for="{{ form.department.id_for_label }}">Подразделение</label>
-                                {{ form.department }}
+                        <div class="input-group">
+                            <label for="{{ form.first_name.id_for_label }}">Имя<span class="star">*</span></label>
+                            {{ form.first_name }}
+                            <span class="input-icon"><i class="fas fa-user"></i></span>
+                        </div>
+                        <div class="input-group">
+                            <label for="{{ form.middle_name.id_for_label }}">Отчество</label>
+                            {{ form.middle_name }}
+                            <span class="input-icon"><i class="fas fa-user"></i></span>
+                        </div>
+                        <div class="input-group">
+                            <label for="{{ form.email.id_for_label }}">Email<span class="star">*</span></label>
+                            {{ form.email }}
+                            <span class="input-icon"><i class="fas fa-envelope"></i></span>
+                        </div>
+                        <div class="input-group">
+                            <label for="{{ form.password1.id_for_label }}">Пароль<span class="star">*</span></label>
+                            {{ form.password1 }}
+                            <span class="input-icon"><i class="fas fa-lock"></i></span>
+                        </div>
+                        <div class="input-group">
+                            <label for="{{ form.password2.id_for_label }}">Подтвердите пароль<span class="star">*</span></label>
+                            {{ form.password2 }}
+                            <span class="input-icon"><i class="fas fa-lock"></i></span>
+                        </div>
+                        <div class="input-group">
+                            <label for="id_phone">Телефон<span class="star">*</span></label>
+                            <input 
+                                type="text" 
+                                name="{{ form.phone.html_name }}" 
+                                id="id_phone" 
+                                class="phone-input" 
+                                placeholder="+7-___-___-__-__"
+                                value="{{ form.phone.value|default_if_none:'' }}"
+                            >
+                            <span class="input-icon"><i class="fas fa-phone"></i></span>
+                        </div>
+                        <div class="input-group">
+                            <label for="{{ form.position.id_for_label }}">Должность<span class="star">*</span></label>
+                            {{ form.position }}
+                            <span class="input-icon"><i class="fas fa-briefcase"></i></span>
+                        </div>
+                        <div class="input-group birth-date">
+                            <label for="{{ form.birth_date.id_for_label }}">Дата рождения</label>
+                            {{ form.birth_date }}
+                            <span class="input-icon"><i class="fas fa-calendar-alt"></i></span>
+                        </div>
+                        <div class="input-group" style="align-items: center;">
+                            <label for="id_department">Организация / Подразделение<span class="star">*</span></label>
+                            <div class="input-organization">
+                                <select id="id_department"
+                                        name="{{ form.department.html_name }}"
+                                        class="form-select change-department"
+                                        style="width: 100%;">
+                                    <option value="">—</option>
+                                    {% for dept in form.fields.department.queryset %}
+                                        <option value="{{ dept.pk }}"
+                                                {% if form.department.value|stringformat:"s" == dept.pk|stringformat:"s" %}selected{% endif %}>
+                                            {{ dept.organization.name }} / {{ dept.name }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
                                 <span class="input-icon"><i class="fas fa-building"></i></span>
                             </div>
-                            <div class="input-group">
-                                <label for="{{ form.role.id_for_label }}">Роль</label>
-                                {{ form.role }}
-                                <span class="input-icon"><i class="fas fa-star"></i></span>
-                            </div>
-                            <div class="input-group">
-                                <label for="{{ form.location.id_for_label }}">Локация</label>
-                                {{ form.location }}
-                                <span class="input-icon"><i class="fas fa-map-marker-alt"></i></span>
-                            </div>
+                        </div>
+                        <div class="input-group">
+                            <label for="{{ form.role.id_for_label }}">Роль<span class="star">*</span></label>
+                            {{ form.role }}
+                            <span class="input-icon"><i class="fas fa-star"></i></span>
+                        </div>
+                        <div class="input-group">
+                            <label for="{{ form.location.id_for_label }}">Локация<span class="star">*</span></label>
+                            {{ form.location }}
+                            <span class="input-icon"><i class="fas fa-map-marker-alt"></i></span>
                         </div>
                     </div>
-
+                    <!-- Контейнер для всех ошибок -->
+                    <div class="all-errors-container">
+                        <!-- Ошибки от Django -->
+                        {% if form.non_field_errors %}
+                            {% for error in form.non_field_errors %}
+                                <div class="all-error-message">{{ error }}</div>
+                            {% endfor %}
+                        {% endif %}
+                        
+                        <!-- Ошибки полей от Django -->
+                        {% for field in form %}
+                            {% for error in field.errors %}
+                                <div class="all-error-message">{{ field.label }}: {{ error }}</div>
+                            {% endfor %}
+                        {% endfor %}
+                    </div>
                     <!-- Переход на авторизацию -->
                     <div class="form-check mb-3 text-center">
                         <span>Есть аккаунт?</span>
-                        <a href="{% url 'login' %}" class="link-light fw-medium" style="text-decoration: none;">
+                        <a href="{% url 'login' %}" class="link-light fw-medium">
                             Авторизация
                         </a>
                     </div>
-
                     <!-- Кнопка -->
                     <div class="btn-container">
                         <button type="submit" class="btn-login">Зарегистрироваться</button>
@@ -133,24 +143,10 @@
     <!-- Подключаем jQuery -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.0/jquery.min.js"></script>
     <!-- Подключаем плагин Inputmask -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/inputmask/5.0.8/jquery.inputmask.min.js"></script>
-    <!-- Инициализация маски -->
-    <script>
-        $(function(){
-            $('#id_phone').inputmask({
-                mask: "8-999-999-99-99",
-                definitions: {
-                    '8': { 
-                    validator: "[8]", 
-                    cardinality: 1 
-                    },
-                    '9': { 
-                    validator: "[0-9]", 
-                    cardinality: 1 
-                    }
-                }
-            });
-        });
-    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.inputmask/5.0.9/jquery.inputmask.min.js"></script>
+    <!-- Select2 JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0-rc.0/js/select2.min.js"></script>
+    <!-- Скрипты кастомные -->
+    <script src="{% static 'users/js/register.js' %}"></script>
 </body>
 </html>

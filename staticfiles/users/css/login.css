@@ -34,6 +34,13 @@ html {
   text-align: center;
 }
 
+a {
+  text-decoration: none;
+  color: #ffffff;
+  font-weight: bold;
+  font-style: italic;
+}
+
 .logo {
   width: 80px;
   height: 70px;
