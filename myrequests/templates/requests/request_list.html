@@ -39,7 +39,7 @@
             <!-- Кнопки -->
             <div class="d-flex flex-column align-items-end gap-1">
                 <div class="d-flex flex-wrap gap-2 justify-content-end">
-                    {% if profile and profile.role.code in 'operator,customer' %}
+                    {% if profile and profile.role.code == 'operator' or profile.role.code == 'customer' %}
                     <a href="{% url 'request_create' %}"
                         class="btn btn-success btn-sm d-inline-flex align-items-center">
                         <i class="bi bi-plus-circle me-1"></i>
@@ -53,7 +53,6 @@
                     </a>
                 </div>
             </div>
-
         </div>
 
         <!-- Фильтры и поиск -->
@@ -220,15 +219,28 @@
                                 <span class="text">Подробнее</span>
                             </a>
 
-                            {% if profile and profile.role.code in 'operator' and req.status.code in 'new,assigned' or profile.role.code in 'customer' and req.status.code in 'new' %}
-                                <!-- Редактировать -->
-                                <a href="{% url 'request_update' req.id %}" class="btn btn-sm btn-edit me-1 btn-responsive d-flex align-items-center gap-1">
-                                <i class="bi bi-pencil-square"></i>
-                                <span class="text">Редактировать</span>
-                                </a>
+                            {% if profile %}
+                                {% if profile.role.code == 'operator' and req.status.code in 'new, assigned' %}
+                                    <!-- Оператор может редактировать в статусе new или assigned -->
+                                    <a href="{% url 'request_update' req.id %}" class="btn btn-sm btn-edit me-1 btn-responsive d-flex align-items-center gap-1">
+                                        <i class="bi bi-pencil-square"></i>
+                                        <span class="text">Редактировать</span>
+                                    </a>
+                                {% elif profile.role.code == 'customer' and req.status.code == 'new' %}
+                                    {% if req.responsible == profile and req.customer != profile %}
+                                        <!-- Нельзя редактировать: только ответственный, не заказчик -->
+                                    {% else %}
+                                        <!-- Заказчик может редактировать, если он не только ответственный -->
+                                        <a href="{% url 'request_update' req.id %}" class="btn btn-sm btn-edit me-1 btn-responsive d-flex align-items-center gap-1">
+                                            <i class="bi bi-pencil-square"></i>
+                                            <span class="text">Редактировать</span>
+                                        </a>
+                                    {% endif %}
+                                {% endif %}
                             {% endif %}
 
-                            {% if profile and profile.role.code in 'operator,customer' %}
+
+                            {% if profile and profile.role.code == 'operator' or profile.role.code == 'customer' %}
                                 <!-- Дублировать -->
                                 <a href="{% url 'request_double' req.id %}" class="btn btn-sm btn-double me-1 btn-responsive d-flex align-items-center gap-1">
                                     <i class="bi bi-files"></i>

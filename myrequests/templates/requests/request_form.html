@@ -1,4 +1,4 @@
-{% load static %}
+{% load widget_tweaks static %}
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -24,7 +24,6 @@
     <link rel="stylesheet" href="{% static 'myrequests/css/request_form.css' %}"/>
 </head>
 <body>
-    {% load widget_tweaks %}
     <div class="form-container">
         <h2 class="form-title">
             {% if form.instance.pk %} Редактировать заявку #{{ req.id }}
@@ -269,28 +268,37 @@
                     <div class="row g-3">
                         <!-- Ответственный -->
                         <div class="col-md-12">
-                        <label for="id_responsible" class="form-label">
-                            Ответственный<span class="star">*</span>
-                        </label>
-                        <select id="id_responsible"
-                                name="responsible"
-                                class="form-select change-responsible"
-                                data-id="{{ form.instance.pk|default:'' }}"
-                                style="width:100%">
-                            <option value="">—</option>
-                            {% for p in responsibles %}
-                            <option value="{{ p.id }}"
-                                    data-department="{% if profile and profile.role.code == 'operator' %}{{ p.department.organization.name }} — {{ p.department.name }}{% else %}{{ p.department.name }}{% endif %}"
-                                    {% if form.instance.responsible_id == p.id %}selected{% endif %}>
-                                {{ p.full_name }}
-                            </option>
-                            {% endfor %}
-                        </select>
-                        {% if form.responsible.errors %}
-                            <div class="invalid-feedback d-block">
-                            {{ form.responsible.errors.as_text }}
+                            <label for="id_responsible" class="form-label">
+                                Ответственный<span class="star">*</span>
+                            </label>
+                            <div class="d-flex align-items-center gap-2">
+                                <select id="id_responsible"
+                                        name="responsible"
+                                        class="form-select change-responsible limited-select"
+                                        data-id="{{ form.instance.pk|default:'' }}">
+                                    <option value="">—</option>
+                                    {% for p in responsibles %}
+                                    <option value="{{ p.id }}"
+                                            data-department="{% if profile and profile.role.code == 'operator' %}{{ p.department.organization.name }} — {{ p.department.name }}{% else %}{{ p.department.name }}{% endif %}"
+                                            {% if form.instance.responsible_id == p.id or form.initial.responsible == p.id %}selected{% endif %}>
+                                        {{ p.full_name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                                <button type="button" 
+                                        class="btn btn-outline-secondary" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#addProfileModal"
+                                        title="Добавить нового ответственного"
+                                        aria-label="Добавить нового ответственного">
+                                    <i class="bi bi-plus-lg"></i>
+                                </button>
                             </div>
-                        {% endif %}
+                            {% if form.responsible.errors %}
+                                <div class="invalid-feedback d-block">
+                                {{ form.responsible.errors.as_text }}
+                                </div>
+                            {% endif %}
                         </div>
                         {% if profile and profile.role.code == 'operator' %}
                         <!-- Заказчик (для операторов) -->
@@ -320,7 +328,6 @@
                         {% endif %}
                     </div>
                 </div>
-                
                 <!-- Комментарий -->
                 <div class="col-md-6 form-section">
                     <div class="row g-3">
@@ -392,6 +399,9 @@
         </form>
     </div>
 
+    <!-- Модальное окно -->
+    {% include 'modals/new_responible_modal.html' %}
+
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
@@ -405,7 +415,24 @@
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ru.js"></script>
 
+    <!-- Подключаем плагин Inputmask -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.inputmask/5.0.9/jquery.inputmask.min.js"></script>
+
     <!-- Скрипты кастомные -->
     <script src="{% static 'myrequests/js/request_form.js' %}"></script>
+    <script>
+        flatpickr("#{{ form.time_start.id_for_label }}", {
+            enableTime: true,
+            noCalendar: true,
+            dateFormat: "H:i",
+            time_24hr: true
+        });
+        flatpickr("#{{ form.time_end.id_for_label }}", {
+            enableTime: true,
+            noCalendar: true,
+            dateFormat: "H:i",
+            time_24hr: true,
+        });
+    </script>
 </body>
 </html>

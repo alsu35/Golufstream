@@ -4,6 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import HttpRequest, HttpResponse
 from core.utils import _has_role
 from users.forms import LoginForm, RegisterForm
+from django.contrib import messages
 
 import logging
 logger = logging.getLogger('users')
@@ -66,14 +67,10 @@ def register_view(request: HttpRequest) -> HttpResponse:
                 logger.info(f"Новый пользователь: {user.email}")
 
                 # Логиним сразу
-                user.backend = 'django.contrib.auth.backends.ModelBackend'
-                login(request, user)
-                logger.info(f"Автовход для {user.email}")
-
-                # Редирект по ролям
-                if user.is_superuser or _has_role(user, 'admin'):
-                    return redirect('/admin/')
-                return redirect('request_list')
+                logger.info(f"Регистрация прошла успешно для {user.email}")
+                messages.success(request, "Регистрация прошла успешно. "
+                                        "Ваш аккаунт будет активирован администратором.")
+                return redirect('login')
 
             except Exception as e:
                 logger.error(f"Регистрация упала: {e}")
@@ -82,3 +79,4 @@ def register_view(request: HttpRequest) -> HttpResponse:
         form = RegisterForm()
 
     return render(request, 'users/register.html', {'form': form})
+

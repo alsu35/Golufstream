@@ -1,6 +1,7 @@
 import re
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
+from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
@@ -12,7 +13,6 @@ User = get_user_model()
 class LoginForm(forms.Form):
     email = forms.EmailField(label='Логин', max_length=150)
     password = forms.CharField(label='Пароль', widget=forms.PasswordInput)
-
 
 class RegisterForm(UserCreationForm):
     last_name   = forms.CharField(max_length=100, label="Фамилия", widget=forms.TextInput(attrs={'required': True}))
@@ -26,6 +26,7 @@ class RegisterForm(UserCreationForm):
     role       = forms.ModelChoiceField(queryset=Role.objects.none(),       label="Роль")
     location   = forms.ModelChoiceField(queryset=OrganizationLocation.objects.none(), label="Локация")
 
+
     class Meta:
         model  = User
         fields = ('email',)
@@ -34,6 +35,21 @@ class RegisterForm(UserCreationForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+        # Устанавливаем начальные значения
+        try:
+            # Находим роль с кодом 'customer'
+            customer_role = Role.objects.get(code='customer')
+            self.fields['role'].initial = customer_role.id
+        except Role.DoesNotExist:
+            pass
+        
+        try:
+            # Находим локацию с кодом 'alm'
+            alm_location = OrganizationLocation.objects.get(code='alm')
+            self.fields['location'].initial = alm_location.id
+        except OrganizationLocation.DoesNotExist:
+            pass
         
         self.fields['department'].queryset = (
             Department.objects
@@ -92,6 +108,7 @@ class RegisterForm(UserCreationForm):
     def save(self, commit=True):
         user = super().save(commit=False)
         user.set_password(self.cleaned_data["password1"])
+        user.is_active = False
         if commit:
             from django.db import transaction
             with transaction.atomic():

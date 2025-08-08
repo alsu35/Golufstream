@@ -1,6 +1,6 @@
 from django.urls import path
 from .views import (
-    request_list_view, request_detail_view, request_create_view,
+    add_responsible_view, request_list_view, request_detail_view, request_create_view,
     request_update_view, update_status, update_responsible,
     request_double_view,
 )
@@ -13,4 +13,5 @@ urlpatterns = [
     path('double/<int:pk>/', request_double_view, name='request_double'),
     path('update_status/', update_status, name='update_status'),
     path('update_responsible/', update_responsible, name='update_responsible'),
+    path('responsible/add/', add_responsible_view, name='add_responsible'),
 ]

@@ -15,6 +15,7 @@ html {
 	margin-top: 20px;
 	margin-bottom: 20px;
 }
+
 /* Скрываем полосу прокрутки в WebKit-браузерах (Chrome, Safari, Edge) */
 body::-webkit-scrollbar,
 html::-webkit-scrollbar {
@@ -24,9 +25,12 @@ html::-webkit-scrollbar {
 
 /* Скрываем полосу прокрутки в Firefox */
 body {
-	scrollbar-width: none; /* скрыть полосу */
-	-ms-overflow-style: none; /* IE 10+ */
+	scrollbar-width: none;
+	/* скрыть полосу */
+	-ms-overflow-style: none;
+	/* IE 10+ */
 }
+
 .login-container {
 	width: 100%;
 	max-width: 1000px;
@@ -81,6 +85,7 @@ body {
 	font-size: calc(0.8rem + 0.9vw);
 	letter-spacing: 0.05em;
 }
+
 .star {
 	color: #dc3545;
 }
@@ -111,6 +116,7 @@ body {
 	min-width: 220px;
 	text-align: left;
 }
+
 /* убрать у большинства иконки календаря */
 input[type='date']::-webkit-calendar-picker-indicator {
 	display: none;
@@ -175,9 +181,7 @@ input[type='date'] {
 }
 
 /* Убираем стандартную стрелку Select2 */
-.select2-container--default
-	.select2-selection--single
-	.select2-selection__arrow {
+.select2-container--default .select2-selection--single .select2-selection__arrow {
 	display: none;
 }
 
@@ -204,9 +208,7 @@ input[type='date'] {
 }
 
 /* Стили для текста внутри */
-.select2-container--default
-	.select2-selection--single
-	.select2-selection__rendered {
+.select2-container--default .select2-selection--single .select2-selection__rendered {
 	color: white !important;
 	padding: 0 !important;
 	line-height: 1.2 !important;
@@ -226,9 +228,7 @@ input[type='date'] {
 }
 
 /* Стили для плейсхолдера */
-.select2-container--default
-	.select2-selection--single
-	.select2-selection__placeholder {
+.select2-container--default .select2-selection--single .select2-selection__placeholder {
 	color: rgba(255, 255, 255, 0.6) !important;
 }
 
@@ -356,33 +356,38 @@ a.link-light {
 	font-style: italic;
 }
 
-
 /* Адаптивность для мобильных */
 @media (max-width: 768px) {
 	.all-error-message {
 		font-size: 0.8em;
 		padding: 8px 12px;
 	}
+
 	.input-organization {
-    padding-bottom: 2px !important;
+		padding-bottom: 2px !important;
 	}
 }
+
 @media (max-width: 1210px) {
 	.input-organization {
 		padding-bottom: 2.4px !important;
 	}
 }
+
 @media (max-width: 850px) {
 	.input-group {
 		flex: 1 0 calc(40% - 5px);
 		min-width: 200px;
 	}
+
 	.login-box {
 		padding: 30px 20px 20px;
 	}
+
 	.input-group .input-icon {
 		top: 62% !important;
 	}
+
 	.input-organization {
 		padding-bottom: 2px !important;
 	}
@@ -397,10 +402,12 @@ a.link-light {
 	.form-grid {
 		max-height: calc(100vh - 300px);
 	}
+
 	.input-organization {
 		padding-bottom: 0 !important;
 	}
+
 	.login-container {
-    padding: 0 10px;
+		padding: 0 10px;
 	}
 }

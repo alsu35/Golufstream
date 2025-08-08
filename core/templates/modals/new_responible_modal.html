@@ -1,0 +1,286 @@
+<div id="addProfileModal" class="modal fade" tabindex="-1" aria-hidden="true" data-add-responsible-url="{% url 'add_responsible' %}">
+    <style>
+        /* Общие стили модального окна */
+        #addProfileModal .modal-content {
+            background: linear-gradient(135deg, #8e3798, #574ca1, #4da4cb);
+            color: white;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+        }
+        
+        #addProfileModal .modal-header {
+            padding: 30px 40px 10px;
+            border: none;
+        }
+        
+        #addProfileModal .modal-title {
+            font-weight: 700;
+            font-size: calc(0.8rem + 0.9vw);
+            letter-spacing: 0.05em;
+        }
+        
+        #addProfileModal .modal-body {
+            padding: 0 40px 20px;
+        }
+
+        /* Стили для форм */
+        #addProfileModal .form-label {
+            color: white;
+            display: block;
+            margin-bottom: 8px;
+            font-size: calc(0.5rem + 0.5vw);
+            font-weight: 600;
+            letter-spacing: 0.03em;
+        }
+        
+        #addProfileModal .form-control,
+        #addProfileModal .form-select {
+            width: 100%;
+            padding: 12px 14px;
+            border-radius: 10px;
+            border: none;
+            outline: none;
+            background-color: rgba(255, 255, 255, 0.25);
+            color: white;
+            font-size: calc(0.5rem + 0.5vw);
+            font-weight: 500;
+            height: 44px;
+            transition: all 0.3s ease;
+            box-sizing: border-box;
+        }
+        
+        #addProfileModal .invalid-feedback {
+            display: none;
+            color: #ff6b6b;
+            margin-top: 5px;
+            font-size: 0.85em;
+        }
+        
+        /* Стили для Select2 */
+        #addProfileModal .select2-container--default .select2-selection--single {
+            background-color: transparent !important;
+            border: none !important;
+            color: white !important;
+            height: 44px !important;
+            display: flex !important;
+            align-items: center !important;
+            padding-left: 14px;
+        }
+
+        #addProfileModeal .select2.select2-container.select2-container--default.select2-container--below{
+            background-color: transparent !important;
+            border: none !important;
+            color: white !important;
+            height: 44px !important;
+            display: flex !important;
+            align-items: center !important;
+            padding-left: 14px;
+        }
+        
+        #addProfileModal .select2-container--default .select2-selection--single .select2-selection__rendered {
+            color: white !important;
+            font-size: calc(0.5rem + 0.5vw) !important;
+            font-weight: 500 !important;
+            padding-left: 0 !important;
+        }
+        
+        #addProfileModal .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 44px !important;
+            right: 10px !important;
+        }
+        
+        #addProfileModal .select2-container--default .select2-selection--single .select2-selection__arrow b {
+            border-color: white transparent transparent transparent !important;
+        }
+        
+        #addProfileModal .select2-dropdown {
+            background: #7ca1cc !important;
+            backdrop-filter: blur(10px);
+            border: none !important;
+            border-radius: 10px !important;
+            overflow: hidden;
+        }
+        
+        #addProfileModal .select2-container--default .select2-selection--single .select2-selection__placeholder {
+            color: white !important;
+        }
+        
+        #addProfileModal .select2-results__option {
+            background-color: transparent !important;
+            color: white !important;
+            padding: 10px 14px !important;
+        }
+        
+        #addProfileModal .select2-results__option--highlighted {
+            background-color: #5276b580 !important;
+            color: white !important;
+        }
+        
+        /* Стили для кнопок */
+        #addProfileModal .btn-outline-light {
+            border-color: rgba(255,255,255,0.5);
+            color: white;
+            font-weight: 600;
+            border-radius: 12px;
+            padding: 14px 20px;
+        }
+        
+        #addProfileModal .btn-light {
+            background-color: white;
+            color: #4da4cb;
+            font-weight: 700;
+            border-radius: 12px;
+            padding: 14px 20px;
+        }
+        
+        /* Адаптивность */
+        @media (max-width: 576px) {
+            #addProfileModal .modal-header {
+                padding: 20px 20px 10px;
+            }
+            
+            #addProfileModal .modal-body {
+                padding: 0 20px 15px;
+            }
+            
+            #addProfileModal .modal-footer {
+                padding: 0 20px 20px;
+            }
+            
+            #addProfileModal .btn-outline-light,
+            #addProfileModal .btn-light {
+                padding: 10px 15px;
+                font-size: calc(0.6rem + 0.5vw);
+            }
+        }
+        
+        @media (max-width: 366px) {
+            #addProfileModal .modal-header {
+                padding: 15px 15px 8px;
+            }
+            
+            #addProfileModal .modal-title {
+                font-size: calc(0.7rem + 0.9vw);
+            }
+            
+            #addProfileModal .modal-body {
+                padding: 0 15px 10px;
+            }
+            
+            #addProfileModal .modal-footer {
+                padding: 0 15px 15px;
+            }
+            
+            #addProfileModal .btn-outline-light,
+            #addProfileModal .btn-light {
+                padding: 8px 12px;
+                font-size: calc(0.5rem + 0.5vw);
+            }
+            
+            #addProfileModal .form-label {
+                font-size: calc(0.45rem + 0.5vw);
+                margin-bottom: 6px;
+            }
+            
+            #addProfileModal .form-control,
+            #addProfileModal .form-select {
+                padding: 10px 12px;
+                height: 40px;
+                font-size: calc(0.45rem + 0.5vw);
+            }
+        }
+    </style>
+    
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <h5 class="modal-title">Добавить нового ответственного</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addProfileForm" novalidate>
+                    {% csrf_token %}
+                    <div class="row g-3">
+                        <!-- Первый столбец -->
+                        <div class="col-12 col-md-6">
+                            <div class="input-group mb-3">
+                                <label for="profileLastName" class="form-label">Фамилия<span class="star">*</span></label>
+                                <input type="text" class="form-control" id="profileLastName" name="last_name">
+                                <div class="invalid-feedback"></div>
+                            </div>
+                            
+                            <div class="input-group mb-3">
+                                <label for="profileFirstName" class="form-label">Имя<span class="star">*</span></label>
+                                <input type="text" class="form-control" id="profileFirstName" name="first_name">
+                                <div class="invalid-feedback"></div>    
+                            </div>
+                            
+                            <div class="input-group mb-3">
+                                <label for="profileMiddleName" class="form-label">Отчество</label>
+                                <input type="text" class="form-control" id="profileMiddleName" name="middle_name">
+                                <div class="invalid-feedback"></div>
+                            </div>
+                            
+                            <div class="input-group mb-3">
+                                <label for="profilePhone" class="form-label">Телефон<span class="star">*</span></label>
+                                <input type="text" class="form-control phone-input" id="profilePhone" name="phone" placeholder="+7-___-___-__-__">
+                                <div class="invalid-feedback"></div>
+                            </div>
+                        </div>
+                        
+                        <!-- Второй столбец -->
+                        <div class="col-12 col-md-6">
+                            <div class="input-group mb-3">
+                                <label for="profilePosition" class="form-label">Должность<span class="star">*</span></label>
+                                <input type="text" class="form-control" id="profilePosition" name="position">
+                                <div class="invalid-feedback"></div>
+                            </div>
+                            
+                            <div class="input-group mb-3 birth-date">
+                                <label for="profileBirthDate" class="form-label">Дата рождения</label>
+                                <input type="date" class="form-control" id="profileBirthDate" name="birth_date">
+                                <div class="invalid-feedback"></div>
+                            </div>
+                            
+                            <div class="input-group mb-3">
+                                <label for="profileLocation" class="form-label">Локация<span class="star">*</span></label>
+                                <select id="profileLocation" name="location" class="form-select">
+                                    <option value="">—</option>
+                                    {% for location in locations %}
+                                        <option value="{{ location.id }}" {% if location.id == form.initial.location %}selected{% endif %}>
+                                            {{ location.name }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                                <div class="invalid-feedback"></div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="profileDepartment" class="form-label">Организация / Подразделение<span class="star">*</span></label>
+                                <select id="profileDepartment" name="department" class="form-select change-department">
+                                    <option value="">—</option>
+                                    {% for dept in departments %}
+                                        <option value="{{ dept.id }}" {% if dept.id == form.initial.department %}selected{% endif %}>
+                                            {{ dept.organization.name }} / {{ dept.name }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                                <div class="invalid-feedback"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Контейнер для ошибок -->
+                    <div class="all-errors-container"></div>
+                    
+                    <div class="modal-footer border-0">
+                        <div class="d-flex gap-2 w-100 justify-content-end">
+                            <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Отмена</button>
+                            <button type="submit" class="btn btn-light" id="saveProfileBtn">Добавить</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

@@ -148,16 +148,23 @@ class Request(models.Model):
         if break_errors:
             errors['break_periods'] = break_errors
 
-        # Проверка полей для "Подъемные сооружения"
-        if self.equipment_category and self.equipment_category.code == 'lifting':
-            if not self.responsible_certificate:
-                errors['responsible_certificate'] = 'Обязательно укажите номер удостоверения ответственного'
-            if not self.rigger_name:
-                errors['rigger_name'] = 'Обязательно укажите ФИО стропальщиков'
-            if not self.rigger_certificates:
-                errors['rigger_certificates'] = 'Обязательно укажите номера удостоверений стропальщиков'
+        # Безопасная проверка категории техники
+        if self.equipment_category_id:  # проверяем наличие ID категории
+            # теперь безопасно обращаться к связанной категории
+            if self.equipment_category.code == 'lifting':
+                if not self.responsible_certificate:
+                    errors['responsible_certificate'] = 'Обязательно укажите номер удостоверения ответственного'
+                if not self.rigger_name:
+                    errors['rigger_name'] = 'Обязательно укажите ФИО стропальщиков'
+                if not self.rigger_certificates:
+                    errors['rigger_certificates'] = 'Обязательно укажите номера удостоверений стропальщиков'
+            else:
+                # Очищаем поля, если не "lifting"
+                self.responsible_certificate = ''
+                self.rigger_name = ''
+                self.rigger_certificates = ''
         else:
-            # Очищаем поля, если не "lifting"
+            # Категория техники не выбрана - очищаем поля
             self.responsible_certificate = ''
             self.rigger_name = ''
             self.rigger_certificates = ''

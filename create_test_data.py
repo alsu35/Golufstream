@@ -39,8 +39,7 @@ categories = [
     ('lifting', 'Подъемные сооружения'),
     ('cargo', 'Перевозка грузов'),
     ('people', 'Перевозка людей'),
-    ('special', 'Специализированная техника'),
-    ('other', 'Прочее')
+    ('special', 'Специализированная техника')
 ]
 for code, name in categories:
     Category.objects.get_or_create(code=code, defaults={'name': name})
@@ -57,9 +56,8 @@ for code, name in locations:
 # Роли
 roles = [
     ('admin', 'Администратор'),
-    ('operator', 'Оператор'),
-    ('customer', 'Заказчик'),
-    ('employee', 'Сотрудник')
+    ('operator', 'Логист'),
+    ('customer', 'Пользователь')
 ]
 for code, name in roles:
     Role.objects.get_or_create(code=code, defaults={'name': name})
@@ -99,20 +97,21 @@ for name, full_name, inn in organizations:
 
 # Подразделения
 departments_data = [
-    {"pk": 1, "organization": 1, "name": "Отдел логистики"},
-    {"pk": 2, "organization": 7, "name": "Производственный отдел"},
-    {"pk": 3, "organization": 7, "name": "Отдел безопасности"},
-    {"pk": 4, "organization": 7, "name": "Административный отдел"},
-    {"pk": 5, "organization": 7, "name": "Технический отдел"},
-    {"pk": 6, "organization": 2, "name": "Инженерный отдел"},
-    {"pk": 7, "organization": 3, "name": "Отдел продаж"},
-    {"pk": 8, "organization": 4, "name": "Строительный отдел"},
-    {"pk": 9, "organization": 5, "name": "Сервисный центр"},
-    {"pk": 10, "organization": 6, "name": "Конструкторский отдел"},
-    {"pk": 11, "organization": 7, "name": "Отдел транспорта"},
-    {"pk": 12, "organization": 8, "name": "Инженерно-технический отдел"}
+    {"pk": 1, "organization": 7, "name": "ЦБ"},
+    {"pk": 2, "organization": 7, "name": "ЦТКРС"},
+    {"pk": 3, "organization": 7, "name": "СГЭ"},
+    {"pk": 4, "organization": 7, "name": "CТиННБ"},
+    {"pk": 5, "organization": 7, "name": "СГМ"},
+    {"pk": 6, "organization": 7, "name": "УГP"},
+    {"pk": 7, "organization": 7, "name": "ПТО"},
+    {"pk": 8, "organization": 7, "name": "ОМТО"},
+    {"pk": 9, "organization": 7, "name": "СПР"},
+    {"pk": 10, "organization": 7, "name": "АТЦ"},
+    {"pk": 11, "organization": 7, "name": "ОАСУТП"},
+    {"pk": 12, "organization": 7, "name": "ОПБ, ОТ и ООС"},
+    {"pk": 12, "organization": 7, "name": "СБР"},
+    {"pk": 12, "organization": 7, "name": "АХО"},
 ]
-
 created_depts = []
 for data in departments_data:
     try:

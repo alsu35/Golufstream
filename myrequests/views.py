@@ -13,11 +13,11 @@ import json
 from core.utils import _has_role, get_profile_and_people, get_reference_data
 from core.models import Category, OrganizationLocation, Status
 from myrequests.models import Request
-from users.models import Profile
-from myrequests.forms import RequestForm
+from users.models import Department, Profile
+from myrequests.forms import RequestForm, ResponsibleForm
 
 import logging
-logger = logging.getLogger('myrequests')
+logger = logging.getLogger(__name__)
 
 @login_required
 def request_list_view(request):
@@ -42,18 +42,8 @@ def request_list_view(request):
         role_code = profile.role.code
 
         if role_code == 'customer':
-            # Только свои заявки (как заказчик)
-            qs = qs.filter(customer=profile)
-
-        elif role_code == 'employee':
-            # Где он ответственный или заявки по его организации и локации
-            qs = qs.filter(
-                Q(responsible=profile) |
-                Q(
-                    customer__department__organization=profile.department.organization,
-                    location=profile.location
-                )
-            )
+            # Только свои заявки
+            qs = qs.filter(Q(customer=profile) | Q(responsible=profile))
 
         elif role_code == 'operator':
             # Все заявки по его локации
@@ -208,15 +198,43 @@ def request_detail_view(request, pk):
     elif _has_role(user, 'customer'):
         if req.customer != profile:
             raise PermissionDenied("You can only view your applications")
-    elif _has_role(user, 'employee'):
-        if req.customer.department.organization != profile.department.organization:
-            raise PermissionDenied("You can only view your organization's applications")
     elif not profile:
         pass  # разрешено (без профиля)
     else:
         raise PermissionDenied("No rights to view the application")
 
     return render(request, 'requests/request_detail.html', {'req': req})
+
+@require_POST
+@login_required
+def add_responsible_view(request):
+    profile = request.user.profile
+    form = ResponsibleForm(request.POST, profile=profile)
+
+    if not form.is_valid():
+        # Логируем ошибки в консоль
+        logger.error("Ошибка при сохранении ответственного: %s", form.errors)
+
+        return JsonResponse({
+            'success': False,
+            'errors': {
+                field: [str(error) for error in errors] 
+                for field, errors in form.errors.items()
+            }
+        }, status=400)
+
+    new_profile = form.save()
+    full_name = f"{new_profile.last_name} {new_profile.first_name} {new_profile.middle_name}".strip()
+    dept = new_profile.department
+    loc  = new_profile.location
+    
+    return JsonResponse({
+        'success': True,
+        'profile_id': new_profile.id,
+        'full_name': full_name,
+        'department_display': f"{dept.organization.name} / {dept.name}",
+        'location_display': loc.name,
+    })
 
 @login_required
 def request_create_view(request):
@@ -226,6 +244,7 @@ def request_create_view(request):
     user = request.user
     profile, responsibles, customers = get_profile_and_people(user)
     ref = get_reference_data()
+    departments = Department.objects.select_related('organization').all()
 
     # Только superuser/admin/operator/customer
     if not (user.is_superuser or (profile and profile.role.code in ('admin','operator','customer'))):
@@ -234,8 +253,9 @@ def request_create_view(request):
     # Всегда дефолтный статус = 'new' и локация = профильная
     new_status = ref['statuses_dict']['new']
     initial = {
-        'status':   new_status.id,
+        'status': new_status.id,
         'location': profile.location.id if profile else None,
+        'responsible': profile.pk if profile else None, 
     }
 
     form = RequestForm(
@@ -249,33 +269,54 @@ def request_create_view(request):
     )
 
     # вычисляем show_lifting сразу из incoming данных
-    cat = form.data.get('equipment_category') or form.initial.get('equipment_category')
-    show_lifting = bool(cat and ref['category_codes'].get(int(cat)) == 'lifting')
+    cat = None
+    show_lifting = False
 
-    if request.method == 'POST' and form.is_valid():
-        req = form.save(commit=False)
+    if request.method == 'POST':
+        # Получаем значение из формы
+        cat = form.data.get('equipment_category')
+        if cat:
+            try:
+                show_lifting = ref['category_codes'].get(int(cat)) == 'lifting'
+            except (TypeError, ValueError):
+                pass
+    else:
+        # Для GET-запроса используем initial
+        cat = form.initial.get('equipment_category')
+        if cat:
+            try:
+                show_lifting = ref['category_codes'].get(int(cat)) == 'lifting'
+            except (TypeError, ValueError):
+                pass
 
-        # customer: оператор выбирает, остальные — свой профиль
-        if profile and profile.role.code == 'operator':
-            customer = form.cleaned_data.get('customer')
-            req.customer = customer
+    if request.method == 'POST':
+        if form.is_valid():
+            if not form.cleaned_data.get('equipment_category'):
+                messages.error(request, "Не выбрана категория техники")
+            else:
+                req = form.save(commit=False)
+                if profile and profile.role.code == 'operator':
+                    req.customer = form.cleaned_data.get('customer')
+                else:
+                    req.customer = profile
+                req.save()
+                messages.success(request, "Заявка создана")
+                return redirect('request_list')
         else:
-            req.customer = profile
-
-        req.save()
-        messages.success(request, "Заявка создана")
-        return redirect('request_list')
-
+            logger.error("Ошибка при создании заявки: %s", form.errors)
+            
     return render(request, 'requests/request_form.html', {
-        'form':               form,
-        'locations':          ref['locations'],
-        'categories':         ref['categories'],
-        'statuses':           ref['statuses'],
-        'category_codes':     ref['category_codes'],
-        'responsibles':       responsibles,
-        'customers':          customers,
-        'profile':            profile,
+        'form': form,
+        'locations': ref['locations'],
+        'categories': ref['categories'],
+        'statuses': ref['statuses'],
+        'category_codes': ref['category_codes'],
+        'responsibles': responsibles,
+        'customers': customers,
+        'profile': profile,
         'current_category_id': cat, 
+        'departments': departments,
+        'show_lifting': show_lifting,
     })
 
 @login_required

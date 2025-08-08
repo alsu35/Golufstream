@@ -175,11 +175,3 @@ html {
   font-size: 0.9rem;
   color: #ffffff;
 }
-
-
-a.link-light {
-  text-decoration: none !important;
-  color: #ffffff !important;
-  font-weight: bold !important;
-  font-style: italic !important;
-}

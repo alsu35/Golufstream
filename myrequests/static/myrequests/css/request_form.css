@@ -192,6 +192,11 @@ select {
   animation: fadeIn 0.3s ease-out;
 }
 
+.limited-select {
+    max-height: 200px;       /* максимальная высота выпадающего списка */
+    overflow-y: auto;        /* вертикальная прокрутка при необходимости */
+}
+
 @keyframes fadeIn {
   from {
     opacity: 0;

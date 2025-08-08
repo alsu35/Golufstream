@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.utils.translation import gettext_lazy as _
+from django.conf import settings
 
 # --- Организация ---
 class Organization(models.Model):
@@ -92,7 +93,6 @@ class User(AbstractUser):
         verbose_name = _('Пользователь')
         verbose_name_plural = _('Пользователи')
 
-
 # --- Профиль ---
 class Profile(models.Model):
     department = models.ForeignKey(
@@ -106,7 +106,10 @@ class Profile(models.Model):
         User,
         verbose_name=_('Пользователь'),
         on_delete=models.CASCADE,
-        related_name='profile'
+        related_name='profile',
+        null=True,
+        blank=True,
+        help_text=_('Оставьте пустым, если профиль временный или без аккаунта')
     )
     last_name = models.CharField(_('Фамилия'), max_length=100)
     first_name = models.CharField(_('Имя'), max_length=100)
